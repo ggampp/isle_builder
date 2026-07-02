@@ -46,11 +46,12 @@ const FRAGMENT_SHADER = /* glsl */ `
     float waves = n1 * 0.65 + n2 * 0.35;
     float wavesSoft = 0.25 + waves * 0.5;
 
-    // Listras diagonais de correnteza, bem sutis (referência: água profunda do vídeo).
+    // Brilhos diagonais bem sutis na água profunda (glints), não mais uma listra
+    // contrastante — o objetivo é leitura de água clara/saturada, não um padrão óbvio.
     float angle = radians(-25.0);
     float diag = vWorldPos.x * cos(angle) - vWorldPos.y * sin(angle);
     float stripePhase = fract(diag * 0.01 - uTime * 0.03);
-    float stripe = smoothstep(0.88, 0.99, stripePhase) * 0.12;
+    float stripe = smoothstep(0.92, 0.995, stripePhase) * 0.05;
 
     vec3 color = mix(uColorDeep, uColorBase, wavesSoft);
     color += stripe;
@@ -76,8 +77,10 @@ export class Ocean {
       fragmentShader: FRAGMENT_SHADER,
       uniforms: {
         uTime: { value: 0 },
-        uColorBase: { value: new THREE.Color('#1c5c93') },
-        uColorDeep: { value: new THREE.Color('#0d2b4a') },
+        // Tuned to blend with CoastRenderer's shallow-water ring (#4ecdc4 → #2a9d8f)
+        // instead of the previous near-black navy, per assets/status/jogo_exemplo.png.
+        uColorBase: { value: new THREE.Color('#4fb8c9') },
+        uColorDeep: { value: new THREE.Color('#1f7a95') },
       },
       depthWrite: false,
       depthTest: false,

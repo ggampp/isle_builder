@@ -32,25 +32,25 @@ export class TerrainRenderer {
   constructor(tilemap: Tilemap) {
     this.tilemap = tilemap;
     this.sandMaterial = new THREE.MeshBasicMaterial({
-      map: generateTerrainAtlasTexture(TerrainColors.sand.base, TerrainColors.sand.dark),
+      map: generateTerrainAtlasTexture(TerrainColors.sand.base, TerrainColors.sand.dark, 'sand'),
       transparent: true,
       depthTest: false,
       depthWrite: false,
     });
     this.grassMaterial = new THREE.MeshBasicMaterial({
-      map: generateTerrainAtlasTexture(TerrainColors.grass.base, TerrainColors.grass.dark),
+      map: generateTerrainAtlasTexture(TerrainColors.grass.base, TerrainColors.grass.dark, 'grass'),
       transparent: true,
       depthTest: false,
       depthWrite: false,
     });
     this.pathMaterial = new THREE.MeshBasicMaterial({
-      map: generateTerrainAtlasTexture(TerrainColors.path.base, TerrainColors.path.dark),
+      map: generateTerrainAtlasTexture(TerrainColors.path.base, TerrainColors.path.dark, 'path'),
       transparent: true,
       depthTest: false,
       depthWrite: false,
     });
     this.bridgeMaterial = new THREE.MeshBasicMaterial({
-      map: generateTerrainAtlasTexture(TerrainColors.bridge.base, TerrainColors.bridge.dark),
+      map: generateTerrainAtlasTexture(TerrainColors.bridge.base, TerrainColors.bridge.dark, 'bridge'),
       transparent: true,
       depthTest: false,
       depthWrite: false,
@@ -63,7 +63,7 @@ export class TerrainRenderer {
       depthWrite: false,
     });
     this.cliffMaterial = new THREE.MeshBasicMaterial({
-      map: generateTerrainAtlasTexture(TerrainColors.cliff.base, TerrainColors.cliff.dark),
+      map: generateTerrainAtlasTexture(TerrainColors.cliff.base, TerrainColors.cliff.dark, 'cliff'),
       transparent: true,
       depthTest: false,
       depthWrite: false,

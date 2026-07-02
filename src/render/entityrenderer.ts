@@ -3,7 +3,6 @@ import { SIM_CONFIG } from '../entities/config.ts';
 import type { EntityManager } from '../entities/manager.ts';
 import { EntityKind } from '../entities/types.ts';
 import {
-  buildEntityAtlas,
   createEntityMaterial,
   EntitySprite,
   updateEntityMaterialFrame,
@@ -40,8 +39,8 @@ export class EntityRenderer {
   private globalFrame = 0;
   private lodSkip = 1;
 
-  constructor() {
-    this.atlas = buildEntityAtlas();
+  constructor(atlas: EntityAtlas) {
+    this.atlas = atlas;
     this.shadowMat = new THREE.MeshBasicMaterial({
       color: new THREE.Color(Palette.shadow),
       transparent: true,

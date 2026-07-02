@@ -71,7 +71,7 @@ export class SettingsModal {
 
     const hint = document.createElement('p');
     hint.className = 'settings-hint';
-    hint.textContent = 'Volume será usado na Sprint 08 (áudio). DPR afeta nitidez e desempenho.';
+    hint.textContent = 'Volume será usado na Sprint 09 (áudio). DPR afeta nitidez e desempenho.';
 
     const btnRow = document.createElement('div');
     btnRow.className = 'settings-actions';

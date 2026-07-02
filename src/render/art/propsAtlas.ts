@@ -328,16 +328,39 @@ export async function loadPropsAtlasFromImage(url: string): Promise<PropAtlas> {
     loader.load(
       url,
       (texture) => {
-        texture.magFilter = THREE.NearestFilter;
-        texture.minFilter = THREE.NearestFilter;
-        texture.generateMipmaps = false;
-        texture.premultiplyAlpha = false;
-
+        const img = texture.image as HTMLImageElement;
         const count = PROP_CATALOG.length;
         const cols = PROP_ATLAS_COLS;
         const rows = Math.ceil(count / cols);
 
-        cachedAtlas = { texture, cols, rows, cellPx: PROP_CELL_PX };
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || cols * PROP_CELL_PX;
+        canvas.height = img.naturalHeight || rows * PROP_CELL_PX;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          texture.dispose();
+          resolve(buildPropsAtlas());
+          return;
+        }
+        ctx.drawImage(img, 0, 0);
+
+        // MuAPI coral often includes grass/island noise — keep procedural reef decor.
+        const coral = PROP_CATALOG.find((p) => p.id === 'coral_piece');
+        if (coral) {
+          const cellX = (coral.atlasIndex % cols) * PROP_CELL_PX;
+          const cellY = Math.floor(coral.atlasIndex / cols) * PROP_CELL_PX;
+          ctx.clearRect(cellX, cellY, PROP_CELL_PX, PROP_CELL_PX);
+          drawPropSprite(ctx, cellX, cellY, 'coral_piece');
+        }
+
+        texture.dispose();
+        const patched = new THREE.CanvasTexture(canvas);
+        patched.magFilter = THREE.NearestFilter;
+        patched.minFilter = THREE.NearestFilter;
+        patched.generateMipmaps = false;
+        patched.premultiplyAlpha = false;
+
+        cachedAtlas = { texture: patched, cols, rows, cellPx: PROP_CELL_PX };
         resolve(cachedAtlas);
       },
       undefined,

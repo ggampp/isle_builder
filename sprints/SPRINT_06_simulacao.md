@@ -23,7 +23,7 @@ congela a simulação.
 - Sistema de entidades, todos os agentes, spawning dinâmico, LOD, pausa.
 
 **Fora:**
-- Sons dos agentes (Sprint 08), interação direta do jogador com agentes (não existe no vídeo).
+- Sons dos agentes (Sprint 09), interação direta do jogador com agentes (não existe no vídeo).
 
 ## Tarefas
 

@@ -254,13 +254,17 @@ export class CoastRenderer {
           : 0xffffff,
       });
 
+      const isCoral =
+        kind === DecorationKind.CoralPink || kind === DecorationKind.CoralOrange;
+      const scale = isCoral ? 0.55 : 0.75;
+
       const mesh = new THREE.InstancedMesh(geo, mat, tiles.length);
       const dummy = new THREE.Object3D();
       for (let i = 0; i < tiles.length; i++) {
         const t = tiles[i]!;
         const feet = propFeetWorld(def, t.x, t.y);
-        dummy.position.set(feet.x, feet.y + h * 0.5, 0.15);
-        dummy.scale.set(1, 1, 1);
+        dummy.position.set(feet.x, feet.y + h * 0.5 * scale, 0.15);
+        dummy.scale.set(scale, scale, 1);
         dummy.updateMatrix();
         mesh.setMatrixAt(i, dummy.matrix);
       }

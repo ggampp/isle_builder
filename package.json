@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "generate:muapi": "node scripts/generate_image_muapi.mjs",
+    "assets:pipeline": "node scripts/run_pipeline.mjs",
+    "assets:stitch": "node scripts/stitch_atlases.mjs"
   },
   "dependencies": {
     "jimp": "^0.22.12",

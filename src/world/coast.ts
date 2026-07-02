@@ -148,15 +148,16 @@ function touchesSand(tilemap: Tilemap, tileX: number, tileY: number): boolean {
 }
 
 function pickDecoration(tileX: number, tileY: number, distance: number): DecorationKindValue {
+  // Sparse accents only in mid-shallow band — avoid carpeting the whole reef.
+  if (distance < 2.5 || distance > 5.5) return DecorationKind.None;
+
   const h = cellHash01(tileX * 17 + 3, tileY * 31 + 7);
-  const nearFactor = 1 - distance / COAST_MAX_DISTANCE;
-  const chance = 0.55 + nearFactor * 0.35;
-  if (h > chance) return DecorationKind.None;
+  if (h > 0.09) return DecorationKind.None;
 
   const kindRoll = cellHash01(tileX + 101, tileY - 53);
-  if (kindRoll < 0.22) return DecorationKind.CoralPink;
-  if (kindRoll < 0.42) return DecorationKind.CoralOrange;
-  if (kindRoll < 0.72) return DecorationKind.Algae;
+  if (kindRoll < 0.12) return DecorationKind.CoralPink;
+  if (kindRoll < 0.22) return DecorationKind.CoralOrange;
+  if (kindRoll < 0.55) return DecorationKind.Algae;
   return DecorationKind.SandPatch;
 }
 

@@ -3,7 +3,7 @@ import { GameLoop } from './core/loop.ts';
 import { IsleCamera } from './core/camera.ts';
 import { InputManager } from './core/input.ts';
 import { DebugOverlay } from './core/debug.ts';
-import { Ocean } from './render/ocean.ts';
+import { Ocean } from './render/Ocean.ts';
 import { Tilemap } from './world/tilemap.ts';
 import { TerrainRenderer } from './render/terrainrenderer.ts';
 import { CoastRenderer } from './render/coastrenderer.ts';
@@ -26,16 +26,17 @@ import { HandTool } from './tools/hand.ts';
 import { showToast } from './ui/toast.ts';
 import { PropMap } from './props/propmap.ts';
 import { PropPlacementController } from './props/propplacement.ts';
-import { buildPropsAtlas, loadPropsAtlasFromImage, invalidatePropsAtlasCache } from './render/art/propsAtlas.ts';
+import { buildPropsAtlas, invalidatePropsAtlasCache } from './render/art/propsAtlas.ts';
 import { PropRenderer } from './render/proprenderer.ts';
 import { PropPreviewRenderer } from './render/proppreviewrenderer.ts';
 import { getPropDefinition } from './props/catalog.ts';
 import { EntityManager } from './entities/manager.ts';
 import { EntityRenderer } from './render/entityrenderer.ts';
-import { invalidateEntityAtlasCache } from './render/entityAtlas.ts';
+import { buildEntityAtlas, invalidateEntityAtlasCache } from './render/entityAtlas.ts';
 import { computeLandBounds } from './world/landBounds.ts';
 import { TILE_SIZE } from './world/constants.ts';
 import { loadSettings } from './ui/settingsModal.ts';
+import { seedStarterIsland } from './world/seedIsland.ts';
 
 
 const container = document.getElementById('app');
@@ -61,14 +62,19 @@ scene.add(ocean.mesh);
 
 const tilemap = new Tilemap();
 const propMap = new PropMap();
-const propsAtlas = await loadPropsAtlasFromImage('/assets/atlas/props-atlas.png');
+// public/assets/atlas/{props,entity}-atlas.png are generated-art batches that came out
+// broken (whole scene thumbnails per cell, watermarked) — see CLAUDE.md "Known gotchas"
+// and sprints/SPRINT_08_refit_visual.md. Using the procedural atlas until they're regenerated
+// as isolated sprites; do not swap back without visually inspecting the new PNG first.
+const propsAtlas = buildPropsAtlas();
+const entityAtlas = buildEntityAtlas();
 const coastManager = new CoastManager(tilemap);
 const terrainRenderer = new TerrainRenderer(tilemap);
 const coastRenderer = new CoastRenderer(coastManager, propsAtlas);
 const propRenderer = new PropRenderer(propMap, propsAtlas);
 const propPreviewRenderer = new PropPreviewRenderer(propsAtlas);
 const entityManager = new EntityManager(tilemap, coastManager);
-const entityRenderer = new EntityRenderer();
+const entityRenderer = new EntityRenderer(entityAtlas);
 
 scene.add(coastRenderer.group);
 scene.add(terrainRenderer.group);
@@ -87,6 +93,8 @@ history.chainTileCallback((x, y, oldLayer, newLayer) => {
 history.chainPropCallback(() => {
   propRenderer.markDirty();
 });
+
+seedStarterIsland(tilemap);
 
 const toolSystem = new ToolSystem(history);
 const propPlacement = new PropPlacementController(tilemap, propMap, history);

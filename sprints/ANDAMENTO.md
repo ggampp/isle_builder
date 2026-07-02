@@ -5,8 +5,8 @@
 > tarefas vivem no arquivo de cada sprint; aqui fica só o resumo.
 
 **Última atualização:** 2026-07-02
-**Sprint atual:** 08 — Persistência, áudio e release (próxima)
-**Progresso geral:** 7 de 8 sprints concluídas (87,5%)
+**Sprint atual:** 08 — Refit visual (em andamento)
+**Progresso geral:** 7 de 10 sprints concluídas (70%)
 
 ## Visão geral das sprints
 
@@ -19,7 +19,9 @@
 | 05 | [Arte e props](SPRINT_05_arte_props.md) | Arte pixel final + catálogo de 53 props colocáveis | Concluído | 2026-07-02 | 2026-07-02 |
 | 06 | [Simulação viva](SPRINT_06_simulacao.md) | Aldeões, cardumes, baleias e navios autônomos a 60fps | Concluído | 2026-07-02 | 2026-07-02 |
 | 07 | [UI premium](SPRINT_07_ui_premium.md) | Paridade visual com o vídeo + abas World/Map/Help | Concluído | 2026-07-02 | 2026-07-02 |
-| 08 | [Persistência, áudio e release](SPRINT_08_persistencia_audio_release.md) | Save/load, paisagem sonora e build de produção verificado | Não iniciado | — | — |
+| 08 | [Refit visual](SPRINT_08_refit_visual.md) | Água/costa/terreno com fidelidade real + atlas de props/entidades corrigido | Em andamento | 2026-07-02 | — |
+| 09 | [Persistência, áudio e release](SPRINT_09_persistencia_audio_release.md) | Save/load, paisagem sonora e build de produção verificado | Não iniciado | — | — |
+| 10 | [Progressão](SPRINT_10_progressao.md) | Ateliê global, marcos visíveis e capítulos de ilha | Não iniciado | — | — |
 
 **Status possíveis:** `Não iniciado` → `Em andamento` → `Concluído` (ou `Bloqueado` com motivo no log).
 
@@ -37,7 +39,7 @@
 
 - [x] Sprint 07: 4º botão do topo direito = **Screenshot** (PNG sem UI). Confirmado e implementado.
 - [x] Sprint 07: abas World, Map e Help — layout aprovado (`mockups/ui-abas-mockup.html`).
-- [ ] Sprint 08: onde publicar o build (GitHub Pages, Netlify, outro?).
+- [ ] Sprint 09: onde publicar o build (GitHub Pages, Netlify, outro?).
 
 ## Ajustes técnicos pendentes (Sprint 03)
 
@@ -64,3 +66,7 @@ Plano completo em [`assets/ART_PLAN.md`](../assets/ART_PLAN.md). Ícones de UI e
 | 2026-07-02 | **Sprints 04/05/06 validadas** — 3 bugs corrigidos (fauna em tiles proibidos, y-sort, renderOrder) |
 | 2026-07-02 | **Plano de arte IA** documentado em `assets/ART_PLAN.md` |
 | 2026-07-02 | **Sprint 07 concluída** — UIManager, 6 abas, settings modal, minimapa interativo, ícones/logo procedurais, cursores contextuais. 52 testes + build verdes. Handoff: `AIMemory/handoffs/2026-07-02-sprint-07-concluida.md` |
+| 2026-07-02 | Discussão de design: transformar o sandbox em jogo com progressão (SimCity/Tropico como referência, mas mantendo o tom relaxante) — decisão: ateliê global, meta visível, sem economia/derrota. Sprint de progressão criada, inicialmente como Sprint 09. |
+| 2026-07-02 | Comparação visual entre `assets/status/image copy.png` (estado atual) e `assets/status/jogo_exemplo.png` (frame de `game_video.mp4`) expôs 3 causas técnicas concretas do "pixelado": atlas de props/entidades gerados via IA quebrado (cenas coladas + marca d'água, carregado direto sem cair no fallback procedural), oceano/terreno ainda 100% procedurais sem textura/espuma, densidade de props abaixo da referência. **Sprint 08 — Refit visual** criada (`SPRINT_08_refit_visual.md`) e inserida **antes** de persistência e progressão, que foram renumeradas: 08→09 (`SPRINT_09_persistencia_audio_release.md`), 09→10 (`SPRINT_10_progressao.md`). |
+| 2026-07-02 | **Sprint 08 iniciada.** Task 0 (ilha inicial): `src/world/seedIsland.ts` stampa ilha orgânica no boot (oeste só areia, leste areia+grama), chamada em `main.ts` sem passar por `HistoryManager` (não desfazível). Task 1 (parar a sangria): `main.ts` revertido para `buildPropsAtlas()`/`buildEntityAtlas()` procedurais em vez de carregar os PNGs quebrados — confirmado visualmente no browser que os artefatos tipo confete na costa sumiram. `npm run build`/`npm run test` verdes (52 testes), FPS 60 no boot, sem erros de console. Faltam: água/costa/terreno com textura real e regeneração correta do atlas (coordenar com o outro agente). |
+| 2026-07-02 | **Sprint 08 — Tasks 2 e 3.** Água: `Ocean.ts` trocado de navy quase-preto para turquesa claro, afinado para casar com o anel de água rasa do `CoastRenderer` (espuma já existia, só não aparecia bem contra o navy). Costa: `terrainAtlas.ts` `drawQuadrant` reescrito — o corte reto que ia até o centro do tile (causa raiz do serrilhado "dente de tubarão") virou recorte arredondado e raso. Terreno: grão de sand/grass reduzido (~60%) e atlas trocado para `LinearMipmapLinearFilter`/mipmaps (corrige aliasing Moiré da minificação 64px→16px). Corrigido também um bug pré-existente de casing (`ocean.ts` vs `Ocean.ts`) que só apareceu ao tocar o arquivo. Build/testes verdes. **Pendência real:** as screenshots via `computer` tool ainda mostram um padrão de pontos na areia/grama que não mudou visualmente após os ajustes — tentativa de ler pixels reais via canvas falhou (aba automatizada com `document.hidden`, gotcha já conhecido); suspeita forte de artefato de compressão JPEG (documentado no `CLAUDE.md`), mas não confirmado nesta sessão — pedido ao usuário para conferir `localhost:5183` num navegador normal. Identificado também um risco de fundo não resolvido: o grão é gerado por célula do atlas compartilhado (não por posição no mundo), então tiles com a mesma máscara repetem o mesmo padrão — mitigado (intensidade menor), não eliminado. |

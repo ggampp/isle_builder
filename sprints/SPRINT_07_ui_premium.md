@@ -37,7 +37,7 @@ World/Map/Help projetadas por inferência e aprovadas pelo usuário.
 - [x] **Aba Map**: minimapa com retângulo viewport, clique para navegar, stats, centralizar na ilha (centroide), salvar PNG.
 - [x] **Aba Help**: ferramentas + câmera/edição + versão.
 - [x] Ícones pixel art procedurais na paleta do jogo (`src/ui/uiIcons.ts`) — **placeholder** até arte IA final.
-- [x] Settings: volume (localStorage, prep Sprint 08), qualidade DPR (1/1.5/2), limpar mapa (`src/ui/settingsModal.ts`).
+- [x] Settings: volume (localStorage, prep Sprint 09), qualidade DPR (1/1.5/2), limpar mapa (`src/ui/settingsModal.ts`).
 - [x] Toggle esconder UI (Tab) — zero elementos além do canvas.
 - [x] Microinterações: hover/press nos botões, transição UI 200ms, cursor contextual por ferramenta (+ grabbing ao pan).
 - [x] Scorecard visual: layout alinhado ao mockup aprovado; comparação qualitativa com vídeo (paridade estrutural, ícones finais pendentes de IA).

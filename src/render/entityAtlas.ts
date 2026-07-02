@@ -191,6 +191,49 @@ export function invalidateEntityAtlasCache(): void {
   cached = null;
 }
 
+export async function loadEntityAtlasFromImage(url: string): Promise<EntityAtlas> {
+  if (cached) return cached;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const cols = ENTITY_ATLAS_COLS;
+      const rows = ENTITY_LAYOUT.length;
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(buildEntityAtlas());
+        return;
+      }
+      ctx.drawImage(img, 0, 0);
+
+      // MuAPI often draws a house for "villager" — keep procedural human on row 0.
+      const villager = ENTITY_LAYOUT.find((e) => e.id === EntitySprite.Villager)!;
+      for (let f = 0; f < villager.frames; f++) {
+        const cellX = f * ENTITY_CELL_PX;
+        const cellY = villager.row * ENTITY_CELL_PX;
+        ctx.clearRect(cellX, cellY, ENTITY_CELL_PX, ENTITY_CELL_PX);
+        drawEntityFrame(ctx, cellX, cellY, EntitySprite.Villager, f, f % 4);
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.magFilter = THREE.NearestFilter;
+      texture.minFilter = THREE.NearestFilter;
+      texture.generateMipmaps = false;
+      texture.premultiplyAlpha = false;
+      cached = { texture, cols, rows, cellPx: ENTITY_CELL_PX };
+      resolve(cached);
+    };
+    img.onerror = () => {
+      console.warn(`Failed to load entity atlas from ${url}, falling back to procedural.`);
+      resolve(buildEntityAtlas());
+    };
+    img.src = url;
+  });
+}
+
 export function buildEntityAtlas(): EntityAtlas {
   if (cached) return cached;
 

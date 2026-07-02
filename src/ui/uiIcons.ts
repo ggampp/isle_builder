@@ -250,48 +250,63 @@ export function getUiIconUrl(id: UiIconId): string {
   return renderIcon(id);
 }
 
+const PNG_ICON_BASE = '/assets/ui/icons/';
+
 export function createIconImg(id: UiIconId, sizePx = 20): HTMLImageElement {
   const img = document.createElement('img');
-  img.src = getUiIconUrl(id);
   img.alt = id;
   img.width = sizePx;
   img.height = sizePx;
   img.draggable = false;
   img.className = 'ui-icon';
   img.style.imageRendering = 'pixelated';
+  img.src = `${PNG_ICON_BASE}${id}.png`;
+  img.onerror = () => {
+    img.onerror = null;
+    img.src = getUiIconUrl(id);
+  };
   return img;
 }
 
-/** Procedural logo canvas — substituído por PNG de IA na fase de arte. */
+/** Logo PNG with procedural canvas fallback. */
 export function createLogoElement(): HTMLDivElement {
   const root = document.createElement('div');
   root.className = 'isle-logo';
   root.style.cssText =
     'position:fixed;top:16px;left:16px;z-index:9999;' +
-    'padding:6px 12px;border-radius:10px;' +
+    'padding:4px 8px;border-radius:10px;' +
     'background:linear-gradient(180deg,#1d3d63,#16334f);' +
     'border:2px solid #0e2440;box-shadow:0 4px 12px rgba(0,10,30,.4);';
 
-  const canvas = document.createElement('canvas');
-  canvas.width = 140;
-  canvas.height = 36;
-  canvas.style.cssText = 'display:block;image-rendering:pixelated;';
-  const ctx = canvas.getContext('2d');
-  if (ctx) {
-    ctx.imageSmoothingEnabled = false;
-    ctx.font = 'bold 14px Fredoka, sans-serif';
-    ctx.fillStyle = '#ffd23f';
-    ctx.fillText('Isle', 28, 16);
-    ctx.font = 'bold 11px Fredoka, sans-serif';
-    ctx.fillStyle = '#eaf2fb';
-    ctx.fillText('BUILDER', 28, 30);
-    px(ctx, 4, 6, 4, 4, '#58c25c');
-    px(ctx, 3, 10, 2, 6, '#79c15c');
-    px(ctx, 8, 4, 2, 4, '#58c25c');
-    px(ctx, 10, 8, 2, 5, '#79c15c');
-    dot(ctx, 4, 6, O);
-  }
-  root.appendChild(canvas);
+  const img = document.createElement('img');
+  img.src = '/assets/logo.png';
+  img.alt = 'Isle Builder';
+  img.draggable = false;
+  img.style.cssText = 'display:block;height:48px;width:auto;image-rendering:pixelated;';
+  img.onerror = () => {
+    img.remove();
+    const canvas = document.createElement('canvas');
+    canvas.width = 140;
+    canvas.height = 36;
+    canvas.style.cssText = 'display:block;image-rendering:pixelated;';
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.font = 'bold 14px Fredoka, sans-serif';
+      ctx.fillStyle = '#ffd23f';
+      ctx.fillText('Isle', 28, 16);
+      ctx.font = 'bold 11px Fredoka, sans-serif';
+      ctx.fillStyle = '#eaf2fb';
+      ctx.fillText('BUILDER', 28, 30);
+      px(ctx, 4, 6, 4, 4, '#58c25c');
+      px(ctx, 3, 10, 2, 6, '#79c15c');
+      px(ctx, 8, 4, 2, 4, '#58c25c');
+      px(ctx, 10, 8, 2, 5, '#79c15c');
+      dot(ctx, 4, 6, O);
+    }
+    root.appendChild(canvas);
+  };
+  root.appendChild(img);
   return root;
 }
 

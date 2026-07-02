@@ -1,8 +1,8 @@
-# Sprint 08 — Persistência, áudio, performance e release
+# Sprint 09 — Persistência, áudio, performance e release
 
 - **Status:** Não iniciado
 - **Duração sugerida:** 1–2 semanas
-- **Dependências:** todas as anteriores
+- **Dependências:** todas as anteriores (incluindo Sprint 08 — refit visual)
 - **Referências:** `GAME_PLAN.md` §5 Fase 7; skills `threejs-audio-generator`, `threejs-debug-profiler`, `threejs-qa-release`
 
 ## Objetivo
