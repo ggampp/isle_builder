@@ -1,0 +1,17 @@
+{
+  "name": "lookup_cve",
+  "description": "Analyze CVE via NVD, web, Reddit. Returns structured report.",
+  "inputSchema": {
+    "properties": {
+      "cve_id": {
+        "title": "Cve Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "cve_id"
+    ],
+    "title": "lookup_cveArguments",
+    "type": "object"
+  }
+}

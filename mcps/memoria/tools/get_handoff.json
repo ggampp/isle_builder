@@ -1,0 +1,17 @@
+{
+  "name": "get_handoff",
+  "description": "Recupera handoffs recentes da memória compartilhada do projeto. Passe task_id para filtrar por tarefa.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "integer",
+        "description": "Máximo de handoffs a retornar (padrão 5)."
+      },
+      "task_id": {
+        "type": "string",
+        "description": "Opcional: filtrar handoffs por este task ID."
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "get_context",
+  "description": "Bootstrap em uma chamada: retorna INDEX.md + PROJECT_OVERVIEW.md + final do work.log + handoffs recentes + repo map + conhecimento global. Use no início da sessão em vez de ler arquivos manualmente.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "integer",
+        "description": "Máximo de eventos do work.log a incluir (padrão 20)."
+      }
+    }
+  }
+}

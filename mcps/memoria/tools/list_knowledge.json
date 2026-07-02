@@ -1,0 +1,17 @@
+{
+  "name": "list_knowledge",
+  "description": "Lista todas as entradas de conhecimento durável com título, kind e importância. Use scope=global para listar conhecimento entre projetos de ~/.memoria.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "kind": {
+        "type": "string",
+        "description": "Filtro opcional: decision | convention | lesson | gotcha."
+      },
+      "scope": {
+        "type": "string",
+        "description": "project (padrão) | global — global lista de ~/.memoria."
+      }
+    }
+  }
+}

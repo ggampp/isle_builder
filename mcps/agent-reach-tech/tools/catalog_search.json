@@ -1,0 +1,22 @@
+{
+  "name": "catalog_search",
+  "description": "Search local open source catalog (manifests/projects.json).",
+  "inputSchema": {
+    "properties": {
+      "term": {
+        "title": "Term",
+        "type": "string"
+      },
+      "limit": {
+        "default": 5,
+        "title": "Limit",
+        "type": "integer"
+      }
+    },
+    "required": [
+      "term"
+    ],
+    "title": "catalog_searchArguments",
+    "type": "object"
+  }
+}

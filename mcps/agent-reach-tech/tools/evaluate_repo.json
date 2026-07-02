@@ -1,0 +1,32 @@
+{
+  "name": "evaluate_repo",
+  "description": "Full OSS evaluation: catalog + GitHub + HN + optional OSV + search. Returns report markdown.",
+  "inputSchema": {
+    "properties": {
+      "name": {
+        "title": "Name",
+        "type": "string"
+      },
+      "repo": {
+        "default": "",
+        "title": "Repo",
+        "type": "string"
+      },
+      "ecosystem": {
+        "default": "",
+        "title": "Ecosystem",
+        "type": "string"
+      },
+      "package": {
+        "default": "",
+        "title": "Package",
+        "type": "string"
+      }
+    },
+    "required": [
+      "name"
+    ],
+    "title": "evaluate_repoArguments",
+    "type": "object"
+  }
+}

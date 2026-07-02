@@ -1,0 +1,9 @@
+{
+  "name": "monitor_trends",
+  "description": "HN + Lobsters + RSS cybersecurity briefing.",
+  "inputSchema": {
+    "properties": {},
+    "title": "monitor_trendsArguments",
+    "type": "object"
+  }
+}

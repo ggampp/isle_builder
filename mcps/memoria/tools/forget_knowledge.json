@@ -1,0 +1,16 @@
+{
+  "name": "forget_knowledge",
+  "description": "Marca uma entrada de conhecimento como substituída movendo-a para AIMemory/archive/. Evita que regras obsoletas enganem agentes.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "title": {
+        "type": "string",
+        "description": "Título (sem distinção de maiúsculas) ou ID da entrada a arquivar."
+      }
+    },
+    "required": [
+      "title"
+    ]
+  }
+}

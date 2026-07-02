@@ -1,0 +1,17 @@
+{
+  "name": "route_intent",
+  "description": "Route user message to research intent (evaluate_oss, analyze_cve, discover_oss, monitor_trends, read_docs).",
+  "inputSchema": {
+    "properties": {
+      "message": {
+        "title": "Message",
+        "type": "string"
+      }
+    },
+    "required": [
+      "message"
+    ],
+    "title": "route_intentArguments",
+    "type": "object"
+  }
+}

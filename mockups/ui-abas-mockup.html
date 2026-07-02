@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Isle Builder — Proposta: abas World, Map e Help</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --panel-bg: #1d3d63;
+    --panel-bg-2: #16334f;
+    --panel-border: #0e2440;
+    --card-bg: #27507e;
+    --card-bg-hover: #2e5c90;
+    --accent: #ffd23f;
+    --accent-dark: #c99a1e;
+    --text: #eaf2fb;
+    --text-dim: #9db8d6;
+    --green: #58c25c;
+    --blue: #3fa7e0;
+    --red: #e8564f;
+    --purple: #9b6fd6;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Fredoka', 'Segoe UI', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 24px 48px;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(255,255,255,.06) 0 2px, transparent 3px),
+      radial-gradient(circle at 70% 60%, rgba(255,255,255,.05) 0 2px, transparent 3px),
+      repeating-linear-gradient(115deg, #2b6cb0 0 26px, #2f74ba 26px 52px);
+  }
+  .intro { max-width: 1180px; margin: 0 auto 26px; text-align: center; }
+  .intro h1 {
+    font-weight: 700; font-size: 26px; letter-spacing: .5px;
+    color: var(--accent); text-shadow: 0 2px 0 rgba(0,0,0,.35);
+  }
+  .intro p { color: #dcebfa; margin-top: 6px; font-size: 14px; text-shadow: 0 1px 0 rgba(0,0,0,.25); }
+  .row {
+    display: flex; gap: 26px; justify-content: center; align-items: flex-start;
+    flex-wrap: wrap; max-width: 1180px; margin: 0 auto;
+  }
+  .col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .col > .caption {
+    font-size: 13px; font-weight: 600; color: #fff;
+    background: rgba(10,30,55,.55); padding: 4px 14px; border-radius: 999px;
+  }
+
+  /* ===== Painel (réplica do painel direito do jogo) ===== */
+  .panel {
+    width: 330px;
+    background: linear-gradient(180deg, var(--panel-bg), var(--panel-bg-2));
+    border: 2px solid var(--panel-border);
+    border-radius: 20px;
+    box-shadow: 0 10px 24px rgba(0,10,30,.45), inset 0 1px 0 rgba(255,255,255,.08);
+    padding: 12px 12px 16px;
+  }
+  .tabs { display: flex; gap: 6px; justify-content: space-between; margin-bottom: 12px; }
+  .tab {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    padding: 6px 2px 5px; border-radius: 12px; cursor: default;
+    background: var(--card-bg); border: 2px solid transparent;
+  }
+  .tab .ic {
+    width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center;
+    font-size: 15px; box-shadow: inset 0 -3px 0 rgba(0,0,0,.25);
+  }
+  .tab span { font-size: 9px; font-weight: 600; color: var(--text-dim); letter-spacing: .3px; }
+  .tab.active { border-color: var(--accent); background: #2b5787; }
+  .tab.active span { color: var(--accent); }
+  .ic-land  { background: #6fbf4a; } .ic-decor { background: #4fae52; }
+  .ic-props { background: #e0703a; } .ic-world { background: #3fa7e0; }
+  .ic-map   { background: #9b6fd6; } .ic-help  { background: #f0b432; }
+
+  .sec-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.6px;
+    color: var(--accent); margin: 14px 4px 8px;
+  }
+  .sec-title:first-of-type { margin-top: 4px; }
+
+  /* linhas de slider */
+  .srow {
+    display: grid; grid-template-columns: 30px 1fr 34px; align-items: center;
+    gap: 8px; background: var(--card-bg); border-radius: 12px;
+    padding: 8px 10px; margin-bottom: 8px;
+  }
+  .srow .emoji { font-size: 17px; text-align: center; filter: drop-shadow(0 1px 0 rgba(0,0,0,.3)); }
+  .srow .lbl { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.1; }
+  .srow .val {
+    font-size: 11px; font-weight: 700; color: var(--accent); text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .track {
+    position: relative; height: 8px; border-radius: 999px;
+    background: #10273f; margin-top: 5px; box-shadow: inset 0 1px 2px rgba(0,0,0,.5);
+  }
+  .fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px;
+    background: linear-gradient(180deg, #ffe27a, var(--accent)); }
+  .knob {
+    position: absolute; top: 50%; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); border: 2px solid #fff3c4;
+    transform: translate(-50%, -50%); box-shadow: 0 2px 3px rgba(0,0,0,.4);
+  }
+
+  /* chips de velocidade */
+  .chips { display: flex; gap: 8px; }
+  .chip {
+    flex: 1; text-align: center; padding: 7px 0; border-radius: 10px;
+    background: var(--card-bg); font-size: 13px; font-weight: 700; color: var(--text-dim);
+    border: 2px solid transparent;
+  }
+  .chip.on { border-color: var(--accent); color: var(--accent); background: #2b5787; }
+
+  /* toggles */
+  .trow {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--card-bg); border-radius: 12px; padding: 9px 12px; margin-bottom: 8px;
+  }
+  .trow .lbl { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .switch { width: 40px; height: 22px; border-radius: 999px; position: relative;
+    background: #10273f; box-shadow: inset 0 1px 2px rgba(0,0,0,.5); }
+  .switch.on { background: var(--green); }
+  .switch::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+    border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.35);
+  }
+  .switch.on::after { left: auto; right: 2px; }
+
+  /* botões pílula */
+  .btn {
+    display: block; width: 100%; text-align: center; padding: 10px 0;
+    border-radius: 999px; font-size: 14px; font-weight: 700; color: #fff;
+    text-shadow: 0 1px 0 rgba(0,0,0,.3); margin-top: 10px;
+    box-shadow: inset 0 -4px 0 rgba(0,0,0,.28), 0 3px 6px rgba(0,10,30,.35);
+  }
+  .btn.green { background: var(--green); }
+  .btn.blue  { background: var(--blue); }
+  .btn.purple{ background: var(--purple); }
+  .btn small { display: block; font-size: 10px; font-weight: 500; opacity: .85; }
+
+  /* minimapa */
+  .minimap-wrap { position: relative; border-radius: 12px; overflow: hidden;
+    border: 2px solid var(--panel-border); box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+  .minimap-wrap canvas { display: block; width: 100%; height: auto; }
+  .minimap-hint {
+    position: absolute; left: 0; right: 0; bottom: 0; text-align: center;
+    font-size: 10px; font-weight: 600; color: #fff; padding: 4px 0;
+    background: linear-gradient(transparent, rgba(6,22,42,.85));
+  }
+  .stats { display: flex; gap: 8px; margin-top: 10px; }
+  .stat {
+    flex: 1; background: var(--card-bg); border-radius: 10px; padding: 7px 4px; text-align: center;
+  }
+  .stat b { display: block; font-size: 14px; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .stat span { font-size: 9px; color: var(--text-dim); font-weight: 600; letter-spacing: .4px; }
+
+  /* help */
+  .hrow {
+    display: grid; grid-template-columns: 26px 1fr auto; align-items: center; gap: 8px;
+    background: var(--card-bg); border-radius: 10px; padding: 7px 10px; margin-bottom: 6px;
+  }
+  .hrow .emoji { font-size: 14px; text-align: center; }
+  .hrow .lbl { font-size: 12px; font-weight: 600; }
+  .key {
+    min-width: 26px; text-align: center; padding: 2px 7px; border-radius: 7px;
+    background: #10273f; border: 1.5px solid #3d6da0; border-bottom-width: 3px;
+    font-size: 11px; font-weight: 700; color: var(--accent);
+  }
+  .help-footer { text-align: center; margin-top: 12px; font-size: 10px; color: var(--text-dim); }
+
+  .note {
+    max-width: 1180px; margin: 26px auto 0; font-size: 13px; color: #eaf4ff;
+    background: rgba(10,30,55,.6); border-radius: 14px; padding: 14px 18px; line-height: 1.55;
+  }
+  .note b { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>Isle Builder — Proposta de design: abas World, Map e Help</h1>
+  <p>Abas que não aparecem abertas no vídeo de referência, projetadas seguindo o estilo das abas Land/Props existentes. Para aprovação.</p>
+</div>
+
+<div class="row">
+
+  <!-- ================= WORLD ================= -->
+  <div class="col">
+    <div class="caption">Aba World — controles da simulação</div>
+    <div class="panel">
+      <div class="tabs">
+        <div class="tab"><div class="ic ic-land">🟩</div><span>Land</span></div>
+        <div class="tab"><div class="ic ic-decor">🌿</div><span>Decor</span></div>
+        <div class="tab"><div class="ic ic-props">🏠</div><span>Props</span></div>
+        <div class="tab active"><div class="ic ic-world">🌊</div><span>World</span></div>
+        <div class="tab"><div class="ic ic-map">🗺️</div><span>Map</span></div>
+        <div class="tab"><div class="ic ic-help">❓</div><span>Help</span></div>
+      </div>
+
+      <div class="sec-title">POPULAÇÃO DO MUNDO</div>
+      <div class="srow">
+        <div class="emoji">🧑‍🌾</div>
+        <div><div class="lbl">Aldeões</div>
+          <div class="track"><div class="fill" style="width:75%"></div><div class="knob" style="left:75%"></div></div>
+        </div><div class="val">75%</div>
+      </div>
+      <div class="srow">
+        <div class="emoji">🐟</div>
+        <div><div class="lbl">Peixes e cardumes</div>
+          <div class="track"><div class="fill" style="width:60%"></div><div class="knob" style="left:60%"></div></div>
+        </div><div class="val">60%</div>
+      </div>
+      <div class="srow">
+        <div class="emoji">🐋</div>
+        <div><div class="lbl">Baleias e tubarões</div>
+          <div class="track"><div class="fill" style="width:40%"></div><div class="knob" style="left:40%"></div></div>
+        </div><div class="val">40%</div>
+      </div>
+      <div class="srow">
+        <div class="emoji">⛵</div>
+        <div><div class="lbl">Navios e botes</div>
+          <div class="track"><div class="fill" style="width:30%"></div><div class="knob" style="left:30%"></div></div>
+        </div><div class="val">30%</div>
+      </div>
+
+      <div class="sec-title">VELOCIDADE DA SIMULAÇÃO</div>
+      <div class="chips">
+        <div class="chip">0.5×</div>
+        <div class="chip on">1×</div>
+        <div class="chip">2×</div>
+      </div>
+
+      <div class="sec-title">AMBIENTE</div>
+      <div class="trow"><div class="lbl">🌫️ Espuma e ondas na costa</div><div class="switch on"></div></div>
+      <div class="trow"><div class="lbl">🔁 Repovoar fauna automaticamente</div><div class="switch on"></div></div>
+
+      <a class="btn green">Repovoar mundo agora<small>redistribui aldeões, fauna e navios</small></a>
+    </div>
+  </div>
+
+  <!-- ================= MAP ================= -->
+  <div class="col">
+    <div class="caption">Aba Map — minimapa e navegação</div>
+    <div class="panel">
+      <div class="tabs">
+        <div class="tab"><div class="ic ic-land">🟩</div><span>Land</span></div>
+        <div class="tab"><div class="ic ic-decor">🌿</div><span>Decor</span></div>
+        <div class="tab"><div class="ic ic-props">🏠</div><span>Props</span></div>
+        <div class="tab"><div class="ic ic-world">🌊</div><span>World</span></div>
+        <div class="tab active"><div class="ic ic-map">🗺️</div><span>Map</span></div>
+        <div class="tab"><div class="ic ic-help">❓</div><span>Help</span></div>
+      </div>
+
+      <div class="sec-title">MINIMAPA</div>
+      <div class="minimap-wrap">
+        <canvas id="minimap" width="300" height="220"></canvas>
+        <div class="minimap-hint">Clique no mapa para mover a câmera</div>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><b>3</b><span>ILHAS</span></div>
+        <div class="stat"><b>1.240</b><span>TILES DE TERRA</span></div>
+        <div class="stat"><b>214</b><span>ALDEÕES</span></div>
+      </div>
+
+      <a class="btn blue">Centralizar na ilha</a>
+      <a class="btn purple">Salvar imagem do mapa<small>PNG em alta resolução, sem UI</small></a>
+    </div>
+  </div>
+
+  <!-- ================= HELP ================= -->
+  <div class="col">
+    <div class="caption">Aba Help — ferramentas e atalhos</div>
+    <div class="panel">
+      <div class="tabs">
+        <div class="tab"><div class="ic ic-land">🟩</div><span>Land</span></div>
+        <div class="tab"><div class="ic ic-decor">🌿</div><span>Decor</span></div>
+        <div class="tab"><div class="ic ic-props">🏠</div><span>Props</span></div>
+        <div class="tab"><div class="ic ic-world">🌊</div><span>World</span></div>
+        <div class="tab"><div class="ic ic-map">🗺️</div><span>Map</span></div>
+        <div class="tab active"><div class="ic ic-help">❓</div><span>Help</span></div>
+      </div>
+
+      <div class="sec-title">FERRAMENTAS</div>
+      <div class="hrow"><div class="emoji">🖌️</div><div class="lbl">Pincel</div><div class="key">B</div></div>
+      <div class="hrow"><div class="emoji">📏</div><div class="lbl">Linha</div><div class="key">L</div></div>
+      <div class="hrow"><div class="emoji">⬜</div><div class="lbl">Retângulo</div><div class="key">R</div></div>
+      <div class="hrow"><div class="emoji">🪣</div><div class="lbl">Preenchimento</div><div class="key">G</div></div>
+      <div class="hrow"><div class="emoji">🧽</div><div class="lbl">Borracha</div><div class="key">E</div></div>
+      <div class="hrow"><div class="emoji">💧</div><div class="lbl">Conta-gotas</div><div class="key">I</div></div>
+      <div class="hrow"><div class="emoji">✋</div><div class="lbl">Mover câmera</div><div class="key">H</div></div>
+
+      <div class="sec-title">CÂMERA E EDIÇÃO</div>
+      <div class="hrow"><div class="emoji">🔍</div><div class="lbl">Zoom</div><div class="key">Scroll</div></div>
+      <div class="hrow"><div class="emoji">↩️</div><div class="lbl">Desfazer</div><div class="key">Ctrl+Z</div></div>
+      <div class="hrow"><div class="emoji">↪️</div><div class="lbl">Refazer</div><div class="key">Ctrl+Y</div></div>
+      <div class="hrow"><div class="emoji">👁️</div><div class="lbl">Esconder interface</div><div class="key">Tab</div></div>
+
+      <div class="help-footer">Isle Builder v0.1 — feito com 💛</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note">
+  <b>Notas da proposta:</b>
+  As abas Land, Decor e Props permanecem exatamente como no vídeo (sem mudanças).
+  Os emojis são marcadores de posição — na implementação serão ícones pixel art gerados na paleta do jogo.
+  <b>World</b> controla densidade da simulação (o vídeo mostra centenas de aldeões — o slider dá esse controle ao jogador), velocidade e comportamentos do ambiente.
+  <b>Map</b> resolve navegação em mundos grandes (o vídeo mostra zoom-out manual para se localizar) e o botão “Salvar imagem do mapa” é candidato a ser a função do 4º botão do topo direito.
+  <b>Help</b> documenta os atalhos definidos na Sprint 03.
+</div>
+
+<script>
+  // Desenha um minimapa ilustrativo (ilhas do vídeo, simplificadas)
+  const cv = document.getElementById('minimap');
+  const cx = cv.getContext('2d');
+  const W = cv.width, H = cv.height;
+
+  // água profunda
+  cx.fillStyle = '#2e63a4';
+  cx.fillRect(0, 0, W, H);
+  cx.fillStyle = 'rgba(255,255,255,.05)';
+  for (let i = 0; i < 9; i++) cx.fillRect((i * 47) % W, (i * 31) % H, 22, 3);
+
+  function blob(x, y, r, color, squishY = .8) {
+    cx.fillStyle = color;
+    cx.beginPath();
+    for (let a = 0; a <= Math.PI * 2 + .1; a += .3) {
+      const rr = r * (1 + .18 * Math.sin(a * 3 + x));
+      const px = x + Math.cos(a) * rr;
+      const py = y + Math.sin(a) * rr * squishY;
+      a === 0 ? cx.moveTo(px, py) : cx.lineTo(px, py);
+    }
+    cx.closePath(); cx.fill();
+  }
+
+  // ilha principal + secundária + pequena (layout do vídeo)
+  function island(x, y, r) {
+    blob(x, y, r * 1.5, '#4e9fd1');   // água rasa / recife
+    blob(x, y, r * 1.12, '#e7d29a');  // areia
+    blob(x, y, r * .72, '#79c15c');   // grama
+  }
+  island(120, 88, 46);
+  island(205, 150, 26);
+  island(62, 158, 18);
+
+  // ponte entre ilhas
+  cx.strokeStyle = '#8a5a33'; cx.lineWidth = 5;
+  cx.beginPath(); cx.moveTo(152, 112); cx.lineTo(188, 138); cx.stroke();
+
+  // viewport da câmera
+  cx.strokeStyle = '#ffd23f'; cx.lineWidth = 2.5;
+  cx.setLineDash([6, 4]);
+  cx.strokeRect(78, 52, 96, 72);
+</script>
+
+</body>
+</html>

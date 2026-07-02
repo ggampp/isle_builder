@@ -1,0 +1,24 @@
+{
+  "name": "search_memory",
+  "description": "Busca híbrida BM25+vetor nos handoffs do projeto. Retorna o trabalho passado mais relevante para uma consulta.",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "integer",
+        "description": "Número de resultados (padrão 5)."
+      },
+      "mode": {
+        "type": "string",
+        "description": "Modo de busca: hybrid (padrão) | vec | bm25."
+      },
+      "query": {
+        "type": "string",
+        "description": "Consulta de busca em linguagem natural."
+      }
+    },
+    "required": [
+      "query"
+    ]
+  }
+}
