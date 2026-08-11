@@ -4,8 +4,15 @@
 > **concluir** cada sprint (status, data, % e log). Os detalhes de escopo e
 > tarefas vivem no arquivo de cada sprint; aqui fica só o resumo.
 
-**Última atualização:** 2026-07-02
+**Última atualização:** 2026-08-11
 **Sprint atual:** 08 — Refit visual (em andamento)
+
+> **Nota 2026-08-11:** o repositório ganhou um segundo jogo, **Canyon Rails**
+> (`railcanyon/`), recriação do builder de ferrovias do novo vídeo do mesmo
+> autor — ver `railcanyon/GAME_PLAN.md` e o handoff
+> `AIMemory/handoffs/2026-08-11-canyon-rails-s01.md`. Este painel segue
+> cobrindo apenas o Isle Builder.
+
 **Progresso geral:** 7 de 10 sprints concluídas (70%)
 
 ## Visão geral das sprints

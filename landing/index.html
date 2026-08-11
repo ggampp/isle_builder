@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sala de Jogos — Isle Builder &amp; Canyon Rails</title>
+    <meta name="description" content="Dois sandboxes feitos do zero em TypeScript e Three.js: pinte uma ilha em pixel art ou construa uma ferrovia num desfiladeiro low-poly." />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
+  </head>
+  <body>
+    <!-- Camadas decorativas do fundo: raios, listras, bolinhas e grão. -->
+    <div class="backdrop" aria-hidden="true">
+      <div class="rays"></div>
+      <div class="stripes"></div>
+      <div class="dots"></div>
+      <div class="grain"></div>
+    </div>
+
+    <div class="floaties" aria-hidden="true">
+      <span style="--x: 6%;  --d: 0s;    --s: 1.2">🌴</span>
+      <span style="--x: 18%; --d: -6s;   --s: 0.8">⛰️</span>
+      <span style="--x: 31%; --d: -12s;  --s: 1.1">🚂</span>
+      <span style="--x: 47%; --d: -3s;   --s: 0.9">🐚</span>
+      <span style="--x: 62%; --d: -9s;   --s: 1.3">🌵</span>
+      <span style="--x: 74%; --d: -15s;  --s: 0.85">⛵</span>
+      <span style="--x: 88%; --d: -5s;   --s: 1.05">🛤️</span>
+    </div>
+
+    <header class="hero">
+      <p class="kicker"><span>◆</span> dois jogos · um repositório · feitos do zero <span>◆</span></p>
+      <h1 class="title">
+        <span class="line-1">SALA</span>
+        <span class="line-2">DE JOGOS</span>
+      </h1>
+      <p class="tagline">
+        Sandboxes construídos do zero em <b>TypeScript</b> + <b>Three.js</b>, sem
+        engine de jogo no meio do caminho. Os mundos — terreno, água, casario e
+        criaturas — são <b>gerados em código</b>. Escolha um e comece a construir.
+      </p>
+      <div class="badges">
+        <span class="badge b1">🎨 mundos gerados em código</span>
+        <span class="badge b2">🧪 86 testes</span>
+        <span class="badge b3">🕹️ joga no navegador</span>
+        <span class="badge b4">💾 salva no seu navegador</span>
+      </div>
+    </header>
+
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track">
+        <span>PINTE UMA ILHA ✦ ASSENTE TRILHOS ✦ EXPLODA PEDRAS ✦ FECHE CONTRATOS ✦ CONSTRUA PONTES ✦ PLANTE FLORESTAS ✦</span>
+        <span>PINTE UMA ILHA ✦ ASSENTE TRILHOS ✦ EXPLODA PEDRAS ✦ FECHE CONTRATOS ✦ CONSTRUA PONTES ✦ PLANTE FLORESTAS ✦</span>
+      </div>
+    </div>
+
+    <main class="shelf">
+      <!-- ─────────────────────── Isle Builder ─────────────────────── -->
+      <article class="cabinet isle">
+        <div class="cabinet-glow" aria-hidden="true"></div>
+        <div class="screen">
+          <svg viewBox="0 0 320 200" role="img" aria-label="Ilha em pixel art cercada de mar, com praia, grama, trilha e árvores">
+            <defs>
+              <pattern id="wave" width="16" height="16" patternUnits="userSpaceOnUse">
+                <rect width="16" height="16" fill="#2f8fd0" />
+                <rect x="0" y="6" width="8" height="2" fill="#4aa8e0" />
+                <rect x="8" y="12" width="8" height="2" fill="#4aa8e0" />
+              </pattern>
+            </defs>
+            <rect width="320" height="200" fill="url(#wave)" />
+            <!-- espuma da orla -->
+            <path d="M52 96 q28-44 84-44 t92 26 q26 22 14 52 -14 34-70 40 -60 6-98-14 -34-18-22-60z"
+                  fill="#8fd6f2" />
+            <!-- areia -->
+            <path d="M60 98 q26-38 78-38 t84 24 q22 20 12 46 -12 30-64 36 -54 6-88-12 -30-16-22-56z"
+                  fill="#f0d9a0" />
+            <!-- grama -->
+            <path d="M76 100 q22-30 66-30 t70 20 q18 16 10 38 -10 24-54 30 -46 4-74-10 -26-14-18-48z"
+                  fill="#63b64d" />
+            <path d="M96 96 q18-20 50-20 t52 14 q14 12 8 28 -8 18-42 22 -34 4-56-8 -18-10-12-36z"
+                  fill="#7ccb5f" />
+            <!-- trilha de terra -->
+            <path d="M104 132 q30-16 54-4 t46-2" stroke="#c9a06a" stroke-width="9"
+                  fill="none" stroke-linecap="round" />
+            <!-- árvores e casinhas em blocos -->
+            <g>
+              <rect x="118" y="86" width="8" height="12" fill="#7a4a2b" />
+              <rect x="110" y="70" width="24" height="20" rx="4" fill="#2f8040" />
+              <rect x="154" y="80" width="8" height="14" fill="#7a4a2b" />
+              <rect x="146" y="62" width="24" height="22" rx="4" fill="#3f9b4f" />
+              <rect x="196" y="92" width="8" height="12" fill="#7a4a2b" />
+              <rect x="188" y="76" width="24" height="20" rx="4" fill="#2f8040" />
+              <rect x="126" y="108" width="26" height="18" fill="#f2e6cc" />
+              <path d="M122 108 l17-13 17 13z" fill="#c0432f" />
+              <rect x="176" y="112" width="24" height="16" fill="#f2e6cc" />
+              <path d="M172 112 l16-12 16 12z" fill="#3b74d8" />
+            </g>
+            <!-- barquinho -->
+            <g>
+              <path d="M240 150 l22 0 -4 8 -14 0z" fill="#f2e6cc" />
+              <rect x="250" y="134" width="2" height="16" fill="#7a4a2b" />
+              <path d="M252 134 l14 10 -14 6z" fill="#e8544a" />
+            </g>
+          </svg>
+          <div class="scanlines" aria-hidden="true"></div>
+        </div>
+
+        <div class="cabinet-body">
+          <div class="marquee-plate">
+            <h2>Isle&nbsp;Builder</h2>
+            <p class="sub">sandbox de pintura 2D</p>
+          </div>
+          <p class="pitch">
+            Um mar infinito e um pincel. Pinte areia, grama, pedra e trilhas em
+            <b>pixel art</b>, deixe o autotiler costurar as bordas e veja o vilarejo
+            ganhar vida sozinho — moradores caminham, barcos cruzam a costa e a
+            fauna marinha nunca invade a terra.
+          </p>
+          <ul class="chips">
+            <li>🖌️ pincel, linha, retângulo e balde</li>
+            <li>↩️ undo &amp; redo completos</li>
+            <li>🏘️ 53 objetos para espalhar</li>
+            <li>🐟 simulação de agentes</li>
+          </ul>
+          <a class="play isle-btn" href="./isle-builder/">
+            <span class="play-label">Jogar Isle Builder</span>
+            <span class="play-arrow" aria-hidden="true">▶</span>
+          </a>
+          <p class="status">Sprints 01–07 concluídas · refit visual em andamento</p>
+        </div>
+      </article>
+
+      <!-- ─────────────────────── Canyon Rails ─────────────────────── -->
+      <article class="cabinet canyon">
+        <div class="cabinet-glow" aria-hidden="true"></div>
+        <div class="screen">
+          <svg viewBox="0 0 320 200" role="img" aria-label="Desfiladeiro low-poly com rio turquesa, ponte de cavalete e um trem azul">
+            <rect width="320" height="200" fill="#f2c48f" />
+            <!-- mesas ao fundo -->
+            <path d="M0 74 l40-26 34 8 26-16 40 12 30-10 46 18 44-8 60 20 v-58 h-320z" fill="#e8b177" />
+            <path d="M18 62 l22-16 20 6 14-10 26 10 v22 h-82z" fill="#c05038" />
+            <path d="M214 58 l26-14 22 8 24-12 20 10 v24 h-92z" fill="#a63c2e" />
+            <!-- planalto -->
+            <rect y="74" width="320" height="126" fill="#e8a66c" />
+            <!-- canyon e rio -->
+            <path d="M0 132 q60-16 116 2 t124 10 80-6 v62 h-320z" fill="#d97e4a" />
+            <path d="M0 146 q62-14 118 4 t122 8 80-6 v48 h-320z" fill="#5fd3c8" />
+            <path d="M0 158 q64-12 120 6 t120 6 80-6 v36 h-320z" fill="#49bdb3" />
+            <!-- ponte de cavalete -->
+            <g stroke="#6b4a2f" stroke-width="3">
+              <path d="M40 128 h190" stroke="#7a4a2b" stroke-width="7" />
+              <path d="M62 130 v34 M94 130 v40 M126 130 v42 M158 130 v40 M190 130 v34" />
+              <path d="M62 146 l32 18 M126 146 l32 18 M94 164 l32-18 M158 164 l32-18" stroke-width="2" />
+            </g>
+            <!-- trilhos -->
+            <g>
+              <rect x="34" y="122" width="200" height="4" fill="#5c4632" />
+              <g fill="#7a4a2b">
+                <rect x="40" y="126" width="4" height="4" /><rect x="56" y="126" width="4" height="4" />
+                <rect x="72" y="126" width="4" height="4" /><rect x="88" y="126" width="4" height="4" />
+                <rect x="104" y="126" width="4" height="4" /><rect x="120" y="126" width="4" height="4" />
+                <rect x="136" y="126" width="4" height="4" /><rect x="152" y="126" width="4" height="4" />
+                <rect x="168" y="126" width="4" height="4" /><rect x="184" y="126" width="4" height="4" />
+                <rect x="200" y="126" width="4" height="4" /><rect x="216" y="126" width="4" height="4" />
+              </g>
+            </g>
+            <!-- trem -->
+            <g>
+              <rect x="150" y="104" width="42" height="16" rx="3" fill="#2f66c4" />
+              <rect x="150" y="94" width="16" height="12" rx="2" fill="#274f96" />
+              <rect x="186" y="98" width="6" height="8" fill="#22232b" />
+              <circle cx="158" cy="122" r="4" fill="#2b2b33" />
+              <circle cx="176" cy="122" r="4" fill="#2b2b33" />
+              <rect x="112" y="108" width="34" height="12" rx="2" fill="#3a3a42" />
+              <circle cx="120" cy="122" r="4" fill="#2b2b33" />
+              <circle cx="138" cy="122" r="4" fill="#2b2b33" />
+              <g fill="#f4f0ea" opacity="0.9">
+                <circle cx="192" cy="88" r="7" /><circle cx="204" cy="78" r="9" />
+                <circle cx="220" cy="70" r="11" />
+              </g>
+            </g>
+            <!-- cactos, pinheiros e pedras -->
+            <g>
+              <rect x="24" y="96" width="5" height="16" rx="2" fill="#3f9b4f" />
+              <rect x="272" y="100" width="5" height="18" rx="2" fill="#2f8040" />
+              <path d="M244 118 l10-22 10 22z" fill="#2f7a3c" />
+              <path d="M258 122 l8-18 8 18z" fill="#3f9b4f" />
+              <path d="M60 176 l12-8 10 8 -6 8 -12 0z" fill="#c05038" />
+              <path d="M242 182 l14-9 12 9 -7 9 -14 0z" fill="#a63c2e" />
+            </g>
+          </svg>
+          <div class="scanlines" aria-hidden="true"></div>
+        </div>
+
+        <div class="cabinet-body">
+          <div class="marquee-plate">
+            <h2>Canyon&nbsp;Rails</h2>
+            <p class="sub">construtor de ferrovias 3D</p>
+          </div>
+          <p class="pitch">
+            Uma mesa desértica cercada por um rio turquesa. Assente trilhos peça a
+            peça, dinamite as pedras do caminho, cruze o desfiladeiro numa
+            <b>ponte de cavalete</b> que nasce sozinha e ligue as cidades — o trem
+            cuida do resto.
+          </p>
+          <ul class="chips">
+            <li>🛤️ trilhos peça a peça</li>
+            <li>💣 dinamite e desvios</li>
+            <li>📋 contratos e níveis</li>
+            <li>🔊 áudio sintetizado</li>
+          </ul>
+          <a class="play canyon-btn" href="./canyon-rails/">
+            <span class="play-label">Jogar Canyon Rails</span>
+            <span class="play-arrow" aria-hidden="true">▶</span>
+          </a>
+          <p class="status">Sprints 01–06 concluídas · jogo completo</p>
+        </div>
+      </article>
+    </main>
+
+    <section class="how">
+      <h3>Rodando na sua máquina</h3>
+      <pre><code># Isle Builder
+cd islebuilder &amp;&amp; npm install &amp;&amp; npm run dev
+
+# Canyon Rails
+cd railcanyon &amp;&amp; npm install &amp;&amp; npm run dev</code></pre>
+      <p>
+        Cada jogo é uma aplicação Vite independente, com seus próprios testes
+        (<code>npm run test</code>) e gate de tipos no build.
+      </p>
+    </section>
+
+    <footer>
+      <p>Feito à mão, pixel e polígono por vez.</p>
+      <p class="small">Isle Builder &amp; Canyon Rails · TypeScript · Three.js · Vite</p>
+    </footer>
+  </body>
+</html>

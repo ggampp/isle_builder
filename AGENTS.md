@@ -2,9 +2,30 @@
 
 This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
-## Current State
+## Layout do repositório (mudou em 2026-08-11)
 
-This project recreates the "Isle Builder" game shown in `game_video.mp4` — a relaxing 2D top-down pixel-art island-painting sandbox that runs in the browser. **Sprints 01–07 are complete** (foundation through premium UI); see `sprints/ANDAMENTO.md`. **Sprint 08 (visual refit) is next**, inserted ahead of persistence/audio/release (now Sprint 09) and progression (now Sprint 10) — the game is playable but visually far from `game_video.mp4` (flat/procedural terrain+ocean, and the generated props/entity atlases are actively broken, see gotcha below). UI icons/logo are **procedural placeholders** in `src/ui/uiIcons.ts` until AI art per `assets/ART_PLAN.md`. Sprint 04-06 validation fixed 3 bugs — see `AIMemory/handoffs/2026-07-02-validacao-sprints-04-06.md`.
+Este repositório abriga **dois jogos** e uma página de seleção. A raiz não é mais
+uma app: cada jogo tem `package.json`, `node_modules` e testes próprios, então
+**sempre rode `npm ...` de dentro do diretório do jogo**.
+
+```
+landing/       página de seleção (HTML+CSS estáticos, sem build)
+islebuilder/   Isle Builder  — o jogo descrito no resto deste arquivo
+railcanyon/    Canyon Rails  — builder de ferrovias 3D low-poly
+```
+
+> **Canyon Rails** (`railcanyon/`) é a recriação original do jogo do vídeo
+> https://x.com/DilumSanjaya/status/2086858760753201622 (baixado como
+> `game_video.mp4` na raiz — o vídeo atual é ESTE, não mais o de ilhas), com plano
+> em `railcanyon/GAME_PLAN.md`: **S01 a S06 concluídas, jogo completo e jogável**.
+>
+> `.github/workflows/deploy.yml` publica no GitHub Pages: `/` (seleção),
+> `/isle-builder/` e `/canyon-rails/`. Use `import.meta.env.BASE_URL` para
+> caminhos de asset (não absolutos).
+
+## Current State (Isle Builder)
+
+All paths in the rest of this file are relative to `islebuilder/`. This game is a relaxing 2D top-down pixel-art island-painting sandbox that runs in the browser (its own reference video is no longer the one in the repo root). **Sprints 01–07 are complete** (foundation through premium UI); see `sprints/ANDAMENTO.md`. **Sprint 08 (visual refit) is next**, inserted ahead of persistence/audio/release (now Sprint 09) and progression (now Sprint 10) — the game is playable but visually far from `game_video.mp4` (flat/procedural terrain+ocean, and the generated props/entity atlases are actively broken, see gotcha below). UI icons/logo are **procedural placeholders** in `src/ui/uiIcons.ts` until AI art per `assets/ART_PLAN.md`. Sprint 04-06 validation fixed 3 bugs — see `AIMemory/handoffs/2026-07-02-validacao-sprints-04-06.md`.
 
 - `GAME_PLAN.md` — detailed video analysis (all observed features) and the phased construction plan (stack, architecture, acceptance criteria per phase)
 - `sprints/` — the plan broken into 10 executable sprints, one file each with deliverable, scope, tasks and acceptance criteria; `sprints/ANDAMENTO.md` is the progress dashboard (update it when starting/finishing a sprint)
@@ -30,7 +51,7 @@ npx tsc --noEmit  # type-check only
 
 Orthographic-camera Three.js app (2D game, no perspective/3D). Source layout, one concern per top-level folder (see `GAME_PLAN.md` §4 for the full target shape):
 
-- `src/core/` — `GameLoop` (rAF loop, clamped delta), `IsleCamera` (ortho camera; continuous 0.1x–8x zoom eased and re-anchored to the cursor every frame; `screenToWorld()`), `InputManager` (raw pointer/keyboard/wheel state; `setForcePan` enables left-click drag for Hand tool), `DebugOverlay` (FPS counter, gated by `import.meta.env.DEV`).
+- `src/core/` — `GameLoop` (rAF loop, clamped delta), `IsleCamera` (ortho camera; continuous 0.5x–1x zoom (starts at 0.5x) eased and re-anchored to the cursor every frame; `screenToWorld()`), `InputManager` (raw pointer/keyboard/wheel state; `setForcePan` enables left-click drag for Hand tool), `DebugOverlay` (FPS counter, gated by `import.meta.env.DEV`).
 - `src/render/` — `Ocean`; `art/terrainAtlas.ts` + `art/propsAtlas.ts`; `entityAtlas.ts` + `entityrenderer.ts` (InstancedMesh agents); `chunkmesh.ts`; `terrainrenderer.ts`; `coastrenderer.ts`; `proprenderer.ts`; `proppreviewrenderer.ts`; `previewrenderer.ts`.
 - `src/world/` — tilemap, layers, autotiler, coast.
 - `src/props/` — `props.json` + `catalog.ts` (53 props data-driven); `propmap.ts`; `placement.ts`; `propplacement.ts`.

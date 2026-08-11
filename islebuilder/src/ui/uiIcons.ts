@@ -250,7 +250,9 @@ export function getUiIconUrl(id: UiIconId): string {
   return renderIcon(id);
 }
 
-const PNG_ICON_BASE = '/assets/ui/icons/';
+// BASE_URL (sempre terminado em barra) mantém os caminhos corretos quando o
+// jogo é publicado num subdiretório, como /isle-builder/ no GitHub Pages.
+const PNG_ICON_BASE = `${import.meta.env.BASE_URL}assets/ui/icons/`;
 
 export function createIconImg(id: UiIconId, sizePx = 20): HTMLImageElement {
   const img = document.createElement('img');
@@ -279,7 +281,7 @@ export function createLogoElement(): HTMLDivElement {
     'border:2px solid #0e2440;box-shadow:0 4px 12px rgba(0,10,30,.4);';
 
   const img = document.createElement('img');
-  img.src = '/assets/logo.png';
+  img.src = `${import.meta.env.BASE_URL}assets/logo.png`;
   img.alt = 'Isle Builder';
   img.draggable = false;
   img.style.cssText = 'display:block;height:48px;width:auto;image-rendering:pixelated;';

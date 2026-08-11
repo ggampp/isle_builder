@@ -3,7 +3,7 @@ import { GameLoop } from './core/loop.ts';
 import { IsleCamera } from './core/camera.ts';
 import { InputManager } from './core/input.ts';
 import { DebugOverlay } from './core/debug.ts';
-import { Ocean } from './render/Ocean.ts';
+import { Ocean } from './render/ocean.ts';
 import { Tilemap } from './world/tilemap.ts';
 import { TerrainRenderer } from './render/terrainrenderer.ts';
 import { CoastRenderer } from './render/coastrenderer.ts';
