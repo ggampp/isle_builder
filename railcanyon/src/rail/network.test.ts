@@ -24,26 +24,75 @@ describe('rede ferroviária', () => {
     const kinds: PieceKind[] = ['straight', 'curveL', 'straight'];
     for (const kind of kinds) expect(net.place(kind).ok).toBe(true);
     expect(net.count).toBe(3);
-    expect(net.kinds()).toEqual(kinds);
 
     const headAfter = net.railhead;
-    expect(net.undo()).toBe('straight');
+    expect(net.undo().kind).toBe('straight');
     expect(net.count).toBe(2);
     expect(net.place('straight').ok).toBe(true);
     expect(net.railhead.x).toBeCloseTo(headAfter.x, 8);
     expect(net.railhead.z).toBeCloseTo(headAfter.z, 8);
   });
 
-  it('restaurar uma lista de peças reproduz a mesma linha', () => {
+  it('restaurar um jogo salvo reproduz a mesma malha', () => {
     const a = freshNetwork();
     const kinds: PieceKind[] = ['straight', 'curveR', 'curveR', 'straight', 'sharpL'];
     for (const kind of kinds) a.place(kind);
+    const branchId = a.addBranch(0, 12);
+    expect(branchId).not.toBeNull();
+    a.place('curveL');
+    a.place('straight');
 
     const b = freshNetwork();
-    b.restore(kinds);
-    expect(b.kinds()).toEqual(a.kinds());
-    expect(b.path().totalLength).toBeCloseTo(a.path().totalLength, 8);
-    expect(b.railhead.heading).toBeCloseTo(a.railhead.heading, 10);
+    b.restore(a.serialize());
+    expect(b.serialize()).toEqual(a.serialize());
+    expect(b.lineCount).toBe(a.lineCount);
+    expect(b.count).toBe(a.count);
+    for (const line of a.list()) {
+      expect(b.path(line.id).totalLength).toBeCloseTo(a.path(line.id).totalLength, 8);
+    }
+  });
+
+  it('um desvio herda o trecho da linha-mãe até a agulha', () => {
+    const net = freshNetwork();
+    for (let i = 0; i < 6; i++) net.place('straight');
+    const mainPoses = net.posesFor(0).length;
+
+    const branchId = net.addBranch(0, 20);
+    if (branchId === null) throw new Error('desvio não criado');
+    expect(net.activeLineId).toBe(branchId);
+    // A ponta do desvio começa exatamente na pose da agulha.
+    expect(net.railhead.x).toBeCloseTo(net.posesFor(0)[20].x, 10);
+
+    net.place('curveR');
+    const branchPath = net.path(branchId);
+    expect(branchPath.points.length).toBeGreaterThan(21);
+    // A linha-mãe segue intacta.
+    expect(net.posesFor(0).length).toBe(mainPoses);
+    // E o começo das duas coincide.
+    expect(branchPath.points[5].x).toBeCloseTo(net.path(0).points[5].x, 10);
+  });
+
+  it('recusa desfazer um trecho de onde sai um desvio', () => {
+    const net = freshNetwork();
+    for (let i = 0; i < 4; i++) net.place('straight');
+    const poses = net.posesFor(0).length;
+    net.addBranch(0, poses - 2);
+
+    net.setActiveLine(0);
+    const result = net.undo();
+    expect(result.kind).toBeNull();
+    expect(result.reason).toMatch(/desvio/);
+    expect(net.count).toBe(4);
+  });
+
+  it('a pedra no caminho barra a peça', () => {
+    const net = freshNetwork();
+    const ahead = net.railhead;
+    const blocked = net.canPlace('straight', (x, z) =>
+      Math.hypot(x - (ahead.x + 10), z - ahead.z) < 6);
+    expect(blocked.ok).toBe(false);
+    expect(blocked.reason).toMatch(/Pedra/);
+    expect(net.canPlace('straight', () => false).ok).toBe(true);
   });
 
   it('o caminho nunca afunda abaixo do nível da água, mesmo cruzando o rio', () => {

@@ -76,11 +76,13 @@
   font-size: 11.5px; margin-top: 7px; opacity: 0.85; font-weight: 700; }
 
 /* ── Painel Construir ──────────────────────────────────── */
-#build { position: absolute; top: 258px; left: 20px; width: 200px; padding: 11px; }
+/* scrollbar-gutter evita que a barra de rolagem cubra a última coluna de itens. */
+#build { position: absolute; top: 248px; left: 20px; width: 208px; padding: 10px;
+  max-height: calc(100vh - 320px); overflow-y: auto; scrollbar-gutter: stable; }
 #build .header { background: linear-gradient(#4a83e8, #2a55a8); color: #fff;
   border: 2px solid #fff; margin: -3px 2px 9px; border-radius: 10px;
   text-align: center; font-weight: 800; font-size: 15px; padding: 5px 0; }
-#build .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+#build .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
 .build-item { position: relative; aspect-ratio: 1; border-radius: 9px;
   background: #fdf6e4; border: 2px solid #e2cfa8;
   display: flex; align-items: center; justify-content: center; font-size: 16px; }
@@ -90,19 +92,24 @@
 .build-item .price { position: absolute; top: -7px; left: -4px;
   background: #4a3a26; color: #ffd76a; font-size: 8.5px; font-weight: 800;
   padding: 1.5px 4px; border-radius: 6px; }
-#build .hint { font-size: 11px; margin-top: 9px; line-height: 1.35;
-  font-weight: 600; opacity: 0.9; min-height: 46px; }
+#build .hint { font-size: 10.5px; margin-top: 8px; line-height: 1.3;
+  font-weight: 600; opacity: 0.9; min-height: 34px; }
 #build .hint .perk { opacity: 0.8; }
 .wide-btn { width: 100%; border: 2px solid #e2cfa8; background: #fdf6e4;
   color: var(--ink); border-radius: 9px; font-size: 11.5px; font-weight: 700;
-  padding: 6px 0; }
+  padding: 6px 0; margin-top: 5px; }
 .wide-btn:hover { border-color: var(--blue); }
+#btn-line { background: #f2e2c0; }
 
 /* ── Painel do trem ────────────────────────────────────── */
 #train-panel { position: absolute; top: 72px; right: 12px; width: 222px; padding: 10px; }
-#train-panel .header { background: linear-gradient(#4a83e8, #2a55a8); color: #fff;
-  border: 2px solid #fff; margin: -2px 0 8px; border-radius: 10px;
+#train-panel .header { position: relative; background: linear-gradient(#4a83e8, #2a55a8);
+  color: #fff; border: 2px solid #fff; margin: -2px 0 8px; border-radius: 10px;
   text-align: center; font-weight: 800; font-size: 15px; padding: 6px 0; }
+#train-panel .header button { position: absolute; right: 6px; top: 4px;
+  background: rgba(255, 255, 255, 0.22); border: none; color: #fff;
+  border-radius: 7px; font-size: 13px; font-weight: 800; padding: 2px 8px;
+  display: none; }
 #train-panel .portrait { background: #fdf6e4; border: 2px solid #e2cfa8;
   border-radius: 10px; height: 58px; display: flex; align-items: center;
   justify-content: center; font-size: 27px; margin-bottom: 7px; }

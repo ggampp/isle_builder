@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { WATER_LEVEL, heightAt, slopeAt } from './heightfield.ts';
+import { WATER_LEVEL, fbm, heightAt, slopeAt } from './heightfield.ts';
 
 /** RNG determinístico (mulberry32). */
 function makeRng(seed: number): () => number {
@@ -12,6 +12,96 @@ function makeRng(seed: number): () => number {
   };
 }
 
+export interface KeepOutCircle {
+  x: number;
+  z: number;
+  r: number;
+}
+
+/** Densidade de floresta em [0,1]; bosques nascem acima de FOREST_THRESHOLD. */
+export function forestDensity(x: number, z: number): number {
+  return fbm(x * 0.008 + 120, z * 0.008 + 77);
+}
+const FOREST_THRESHOLD = 0.58;
+
+/** Pedras acima deste raio são obstáculos rastreados (dinamitáveis). */
+const BOULDER_MIN_SCALE = 1.5;
+
+interface Boulder {
+  x: number;
+  z: number;
+  radius: number;
+  index: number;
+  alive: boolean;
+}
+
+/**
+ * As pedras grandes do vale: bloqueiam trilhos e construções até serem
+ * dinamitadas. Guardar posição e índice permite apagar a instância depois.
+ */
+export class RockField {
+  private mesh: THREE.InstancedMesh;
+  private boulders: Boulder[] = [];
+  private zeroMatrix = new THREE.Matrix4().makeScale(0, 0, 0);
+
+  constructor(mesh: THREE.InstancedMesh) {
+    this.mesh = mesh;
+  }
+
+  add(x: number, z: number, radius: number, index: number): void {
+    this.boulders.push({ x, z, radius, index, alive: true });
+  }
+
+  get aliveCount(): number {
+    return this.boulders.filter((b) => b.alive).length;
+  }
+
+  /** Há alguma pedra viva encostando num círculo de raio `pad` em (x,z)? */
+  blocks(x: number, z: number, pad: number): boolean {
+    for (const b of this.boulders) {
+      if (!b.alive) continue;
+      if (Math.hypot(b.x - x, b.z - z) < b.radius + pad) return true;
+    }
+    return false;
+  }
+
+  /** Remove as pedras dentro do raio; devolve quantas sumiram. */
+  blast(x: number, z: number, radius: number): number {
+    let removed = 0;
+    for (const b of this.boulders) {
+      if (!b.alive) continue;
+      if (Math.hypot(b.x - x, b.z - z) > radius + b.radius) continue;
+      b.alive = false;
+      this.mesh.setMatrixAt(b.index, this.zeroMatrix);
+      removed++;
+    }
+    if (removed > 0) this.mesh.instanceMatrix.needsUpdate = true;
+    return removed;
+  }
+
+  /** Índices já dinamitados, para o jogo salvo. */
+  removedIndices(): number[] {
+    return this.boulders.filter((b) => !b.alive).map((b) => b.index);
+  }
+
+  restoreRemoved(indices: number[]): void {
+    const set = new Set(indices);
+    let changed = false;
+    for (const b of this.boulders) {
+      if (!set.has(b.index) || !b.alive) continue;
+      b.alive = false;
+      this.mesh.setMatrixAt(b.index, this.zeroMatrix);
+      changed = true;
+    }
+    if (changed) this.mesh.instanceMatrix.needsUpdate = true;
+  }
+}
+
+export interface ScatterWorld {
+  group: THREE.Group;
+  rocks: RockField;
+}
+
 interface ScatterSpec {
   count: number;
   geometry: THREE.BufferGeometry;
@@ -20,37 +110,19 @@ interface ScatterSpec {
   maxScale: number;
   maxSlope: number;
   yOffset: number;
-}
-
-export interface KeepOutCircle {
-  x: number;
-  z: number;
-  r: number;
+  /** Onde a peça pode nascer em relação aos bosques. */
+  forest: 'any' | 'outside';
 }
 
 /**
- * Vegetação e pedras instanciadas. Evita a água, encostas fortes, os pontos
- * marcados (cidades) e a faixa reservada de qualquer caminho informado.
+ * Vegetação e pedras instanciadas. Evita água, encostas fortes e os círculos
+ * marcados (cidades). Os pinheiros nascem só nos bolsões de floresta.
  */
-export function buildScatter(
-  avoidPoints: THREE.Vector3[],
-  keepOut: KeepOutCircle[] = [],
-): THREE.Group {
+export function buildScatter(keepOut: KeepOutCircle[] = []): ScatterWorld {
   const group = new THREE.Group();
   const rng = makeRng(20260811);
 
-  const cell = 8;
-  const occupied = new Set<string>();
-  for (const p of avoidPoints) {
-    for (let ox = -1; ox <= 1; ox++) {
-      for (let oz = -1; oz <= 1; oz++) {
-        occupied.add(`${Math.floor(p.x / cell) + ox},${Math.floor(p.z / cell) + oz}`);
-      }
-    }
-  }
-
   const blocked = (x: number, z: number): boolean => {
-    if (occupied.has(`${Math.floor(x / cell)},${Math.floor(z / cell)}`)) return true;
     for (const circle of keepOut) {
       if (Math.hypot(circle.x - x, circle.z - z) < circle.r) return true;
     }
@@ -68,13 +140,13 @@ export function buildScatter(
 
   const specs: ScatterSpec[] = [
     { count: 760, geometry: rockGeo, colors: ['#c05038', '#d97e4a', '#a63c2e', '#b5573c'],
-      minScale: 0.5, maxScale: 2.6, maxSlope: 1.2, yOffset: -0.15 },
+      minScale: 0.5, maxScale: 2.6, maxSlope: 1.2, yOffset: -0.15, forest: 'any' },
     { count: 420, geometry: cactusGeo, colors: ['#3f9b4f', '#2f8040', '#4dae5c'],
-      minScale: 0.5, maxScale: 1.25, maxSlope: 0.35, yOffset: -0.1 },
+      minScale: 0.5, maxScale: 1.25, maxSlope: 0.35, yOffset: -0.1, forest: 'outside' },
     { count: 460, geometry: bushGeo, colors: ['#5da95a', '#7bbf67', '#4c9a52'],
-      minScale: 0.6, maxScale: 1.4, maxSlope: 0.4, yOffset: -0.1 },
+      minScale: 0.6, maxScale: 1.4, maxSlope: 0.4, yOffset: -0.1, forest: 'any' },
     { count: 280, geometry: flowerGeo, colors: ['#d977a8', '#c95f92', '#e08fba'],
-      minScale: 0.6, maxScale: 1.2, maxSlope: 0.35, yOffset: -0.05 },
+      minScale: 0.6, maxScale: 1.2, maxSlope: 0.35, yOffset: -0.05, forest: 'outside' },
   ];
 
   const matrix = new THREE.Matrix4();
@@ -82,6 +154,7 @@ export function buildScatter(
   const scale = new THREE.Vector3();
   const color = new THREE.Color();
   const axis = new THREE.Vector3(0, 1, 0);
+  let rocks: RockField | null = null;
 
   for (const spec of specs) {
     const mesh = new THREE.InstancedMesh(
@@ -89,6 +162,8 @@ export function buildScatter(
       new THREE.MeshLambertMaterial({ flatShading: true }),
       spec.count,
     );
+    const isRock = spec.geometry === rockGeo;
+    const field = isRock ? new RockField(mesh) : null;
     let placed = 0;
     let guard = 0;
     while (placed < spec.count && guard < spec.count * 30) {
@@ -99,6 +174,7 @@ export function buildScatter(
       if (y < WATER_LEVEL + 0.6) continue;
       if (slopeAt(x, z) > spec.maxSlope) continue;
       if (blocked(x, z)) continue;
+      if (spec.forest === 'outside' && forestDensity(x, z) > FOREST_THRESHOLD) continue;
       const s = spec.minScale + rng() * (spec.maxScale - spec.minScale);
       quat.setFromAxisAngle(axis, rng() * Math.PI * 2);
       scale.set(s, s * (0.85 + rng() * 0.3), s);
@@ -106,8 +182,79 @@ export function buildScatter(
       mesh.setMatrixAt(placed, matrix);
       color.set(spec.colors[Math.floor(rng() * spec.colors.length)]);
       mesh.setColorAt(placed, color);
+      if (field && s >= BOULDER_MIN_SCALE) field.add(x, z, s * 0.9, placed);
       placed++;
     }
+    mesh.count = placed;
+    mesh.castShadow = true;
+    group.add(mesh);
+    if (field) rocks = field;
+  }
+
+  group.add(buildPineForest(rng, blocked));
+
+  if (!rocks) throw new Error('campo de pedras não inicializado');
+  return { group, rocks };
+}
+
+/** Pinheiros agrupados nos bolsões de floresta: tronco + duas copas cônicas. */
+function buildPineForest(
+  rng: () => number,
+  blocked: (x: number, z: number) => boolean,
+): THREE.Group {
+  const group = new THREE.Group();
+  const target = 620;
+
+  const trunkGeo = new THREE.CylinderGeometry(0.16, 0.24, 1.6, 6);
+  trunkGeo.translate(0, 0.8, 0);
+  const crownGeo = new THREE.ConeGeometry(1.5, 3.2, 8);
+  crownGeo.translate(0, 2.9, 0);
+  const topGeo = new THREE.ConeGeometry(1.05, 2.4, 8);
+  topGeo.translate(0, 4.5, 0);
+
+  const trunks = new THREE.InstancedMesh(
+    trunkGeo, new THREE.MeshLambertMaterial({ color: '#6b4a2f', flatShading: true }), target);
+  const crowns = new THREE.InstancedMesh(
+    crownGeo, new THREE.MeshLambertMaterial({ flatShading: true }), target);
+  const tops = new THREE.InstancedMesh(
+    topGeo, new THREE.MeshLambertMaterial({ flatShading: true }), target);
+
+  const greens = ['#2f7a3c', '#3f9b4f', '#276b34', '#48a557'];
+  const matrix = new THREE.Matrix4();
+  const quat = new THREE.Quaternion();
+  const scale = new THREE.Vector3();
+  const color = new THREE.Color();
+  const axis = new THREE.Vector3(0, 1, 0);
+
+  let placed = 0;
+  let guard = 0;
+  while (placed < target && guard < target * 60) {
+    guard++;
+    const x = (rng() - 0.5) * 400;
+    const z = (rng() - 0.5) * 400;
+    const density = forestDensity(x, z);
+    if (density < FOREST_THRESHOLD) continue;
+    // Mais denso no miolo do bosque, ralo nas bordas.
+    if (rng() > (density - FOREST_THRESHOLD) * 7) continue;
+    const y = heightAt(x, z);
+    if (y < WATER_LEVEL + 1.5) continue;
+    if (slopeAt(x, z) > 0.42) continue;
+    if (blocked(x, z)) continue;
+
+    const s = 0.7 + rng() * 0.85;
+    quat.setFromAxisAngle(axis, rng() * Math.PI * 2);
+    scale.set(s, s * (0.85 + rng() * 0.4), s);
+    matrix.compose(new THREE.Vector3(x, y - 0.15, z), quat, scale);
+    trunks.setMatrixAt(placed, matrix);
+    crowns.setMatrixAt(placed, matrix);
+    tops.setMatrixAt(placed, matrix);
+    color.set(greens[Math.floor(rng() * greens.length)]);
+    crowns.setColorAt(placed, color);
+    tops.setColorAt(placed, color);
+    placed++;
+  }
+
+  for (const mesh of [trunks, crowns, tops]) {
     mesh.count = placed;
     mesh.castShadow = true;
     group.add(mesh);

@@ -50,16 +50,29 @@ wheel zoom. Botões topo-direito: tema/sol, ajuda, save, menu.
 | **S03 — Trem operacional** | Estações nas cidades conectadas, paradas com embarque, lenha consumida e reabastecida, condição caindo com o uso + reparo pago, vagões compráveis, reversão no fim da linha | ✅ concluída |
 | **S04 — Construções** | 9 construções procedurais com preço, ghost no cursor, rotação `[` `]`, validação de encosta/água/sobreposição/faixa da linha, bônus reais (carga, lenha, desgaste, renda) | ✅ concluída |
 | **S05 — Economia e objetivos** | Moedas/pontos/XP/níveis, contratos com timer, recompensa e expiração, 6 objetivos-tutorial encadeados, painéis Trens/Rede/Contratos/Loja, save/load em `localStorage` | ✅ concluída |
-| S06 — Polimento e release | Áudio, desvios (sidings) e ramais, ferramenta de dinamite para pedras, bolsões de floresta de pinheiros, deploy | ⏳ pendente |
+| **S06 — Polimento e release** | Bosques de pinheiros; pedras que bloqueiam a obra e a dinamite que as remove (ou desmonta construções); desvios ancorados na linha existente com locomotiva própria; áudio sintetizado (bufado, apito, estouro, vento); deploy dos dois jogos no GitHub Pages | ✅ concluída |
 
 ### O laço de jogo hoje
 
 Escolher uma peça → o ghost aparece na ponta brilhante da linha → clicar (ou Espaço)
-assenta e cobra as moedas → ao chegar a 26 m de uma cidade ela conecta, vira parada
-do trem e libera contratos → o trem circula sozinho, para nas estações, reabastece,
-carrega e entrega → contratos concluídos pagam moedas/pontos/XP → o nível sobe e
-libera contratos maiores → moedas viram trilhos, construções e vagões. Sem derrota:
-sem lenha o trem apenas desacelera, e contratos expirados só somem.
+assenta e cobra as moedas → pedras no caminho barram a obra até serem dinamitadas →
+ao chegar a 26 m de uma cidade ela conecta, vira parada do trem e libera contratos →
+o trem circula sozinho, para nas estações, reabastece, carrega e entrega → contratos
+concluídos pagam moedas/pontos/XP → o nível sobe e libera contratos maiores → moedas
+viram trilhos, construções, desvios e novas locomotivas. Sem derrota: sem lenha o trem
+apenas desacelera, e contratos expirados só somem.
+
+### Controles
+
+WASD move · arrastar move · botão direito gira · roda aproxima · clique assenta ·
+Espaço repete a peça · Z desfaz · L troca a linha ativa · `[` `]` giram a construção ·
+Esc cancela a seleção.
+
+### Publicação
+
+`.github/workflows/deploy.yml` publica os dois jogos do repositório no GitHub Pages a
+cada push na `main` — Isle Builder na raiz e Canyon Rails em `/canyon-rails/`. Exige
+Pages habilitado em *Settings → Pages → Source: GitHub Actions*.
 
 ## 3. Arquitetura (espelha o padrão do Isle Builder)
 

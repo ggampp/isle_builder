@@ -9,7 +9,7 @@ const WORLD_HALF = 220;
 export class Minimap {
   private ctx: CanvasRenderingContext2D;
   private base: ImageData | null = null;
-  private trackPts: { x: number; y: number }[] = [];
+  private lines: { x: number; y: number }[][] = [];
   private connected = new Set<string>();
 
   constructor(canvas: HTMLCanvasElement) {
@@ -21,8 +21,9 @@ export class Minimap {
     this.paintBase();
   }
 
-  setTrack(points: ReadonlyArray<Vec3>): void {
-    this.trackPts = points.map((p) => this.toMap(p.x, p.z));
+  /** Todas as linhas da malha (principal + desvios). */
+  setLines(lines: ReadonlyArray<ReadonlyArray<Vec3>>): void {
+    this.lines = lines.map((points) => points.map((p) => this.toMap(p.x, p.z)));
   }
 
   setConnected(townIds: string[]): void {
@@ -55,16 +56,17 @@ export class Minimap {
     this.base = this.ctx.getImageData(0, 0, MAP_SIZE, MAP_SIZE);
   }
 
-  update(trainPos: { x: number; z: number }): void {
+  update(trainPositions: ReadonlyArray<{ x: number; z: number }>): void {
     const ctx = this.ctx;
     if (this.base) ctx.putImageData(this.base, 0, 0);
 
-    if (this.trackPts.length > 1) {
+    for (const points of this.lines) {
+      if (points.length < 2) continue;
       ctx.strokeStyle = 'rgba(74, 52, 34, 0.95)';
       ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(this.trackPts[0].x, this.trackPts[0].y);
-      for (const p of this.trackPts) ctx.lineTo(p.x, p.y);
+      ctx.moveTo(points[0].x, points[0].y);
+      for (const p of points) ctx.lineTo(p.x, p.y);
       ctx.stroke();
     }
 
@@ -79,13 +81,15 @@ export class Minimap {
       ctx.stroke();
     }
 
-    const t = this.toMap(trainPos.x, trainPos.z);
-    ctx.fillStyle = '#2f66c4';
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.arc(t.x, t.y, 3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
+    for (const position of trainPositions) {
+      const t = this.toMap(position.x, position.z);
+      ctx.fillStyle = '#2f66c4';
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
   }
 }

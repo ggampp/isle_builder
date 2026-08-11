@@ -124,6 +124,11 @@ export class Train {
     return this.speed > 0.5;
   }
 
+  /** Velocidade instantânea em m/s (usada pelo áudio). */
+  get currentSpeed(): number {
+    return this.speed;
+  }
+
   get headPosition(): THREE.Vector3 {
     return this.cars[0].position;
   }

@@ -8,9 +8,12 @@ import type { EconomySnapshot } from '../game/economy.ts';
 import type { Contract } from '../game/contracts.ts';
 import './styles.css';
 
+export type ToolKind = 'dynamite' | 'siding';
+
 export type Selection =
   | { type: 'track'; kind: PieceKind }
   | { type: 'building'; kind: BuildingKind }
+  | { type: 'tool'; kind: ToolKind }
   | null;
 
 export interface HudCallbacks {
@@ -18,9 +21,13 @@ export interface HudCallbacks {
   onUndo: () => void;
   onAddWagon: () => void;
   onRepair: () => void;
+  onBuyLocomotive: () => void;
   onAcceptContract: (id: string) => void;
   onSave: () => void;
   onToggleFollow: () => void;
+  onToggleMute: () => void;
+  onCycleLine: () => void;
+  onCycleTrain: () => void;
   onHelp: () => void;
 }
 
@@ -39,12 +46,17 @@ export interface HudState {
     route: string;
     repairCost: number;
     wagonCost: number;
+    locomotiveCost: number;
+    count: number;
   };
   objective: { title: string; detail: string; progress: number; reward: number };
   contracts: { offers: Contract[]; accepted: Contract[] };
   connectedTowns: string[];
   trackPieces: number;
+  activeLineName: string;
+  lineCount: number;
   following: boolean;
+  blastCost: number;
 }
 
 type PanelId = 'trains' | 'network' | 'contracts' | 'shop';
@@ -108,11 +120,17 @@ export class Hud {
         'Estende a linha a partir da ponta brilhante',
         () => ({ type: 'track', kind }));
     }
+    addItem('tool:siding', '🔀', 0, 'Agulha de desvio',
+      'Clique num trecho já construído para nascer um ramal ali',
+      () => ({ type: 'tool', kind: 'siding' }));
     for (const kind of BUILD_ORDER) {
       const spec = BUILDING_SPECS[kind];
       addItem(`building:${kind}`, spec.icon, spec.cost, spec.label, spec.perk,
         () => ({ type: 'building', kind }));
     }
+    addItem('tool:dynamite', '💣', 0, 'Dinamite',
+      'Explode as pedras do caminho ou desmonta algo que você construiu',
+      () => ({ type: 'tool', kind: 'dynamite' }));
     void BUILDING_KINDS;
   }
 
@@ -123,8 +141,10 @@ export class Hud {
     this.query('#btn-save').addEventListener('click', () => this.callbacks.onSave());
     this.query('#btn-help').addEventListener('click', () => this.callbacks.onHelp());
     this.query('#btn-follow').addEventListener('click', () => this.callbacks.onToggleFollow());
-    this.query('#btn-theme').addEventListener('click', () => this.toast('O sol do desfiladeiro não se põe hoje ☀️'));
+    this.query('#btn-sound').addEventListener('click', () => this.callbacks.onToggleMute());
     this.query('#btn-menu').addEventListener('click', () => this.togglePanel('trains'));
+    this.query('#btn-line').addEventListener('click', () => this.callbacks.onCycleLine());
+    this.query('#btn-train-next').addEventListener('click', () => this.callbacks.onCycleTrain());
 
     const panels: PanelId[] = ['trains', 'network', 'contracts', 'shop'];
     for (const id of panels) {
@@ -202,6 +222,9 @@ export class Hud {
     this.query('#obj-reward').textContent = `🪙 ${state.objective.reward}`;
     this.query('#btn-follow').textContent = state.following ? '📷 Soltar câmera' : '📷 Seguir trem';
     this.query('#track-count').textContent = `${state.trackPieces} peças`;
+    this.query('#btn-line').textContent =
+      `🔀 ${state.activeLineName}${state.lineCount > 1 ? ' ▸' : ''}`;
+    this.query('#btn-train-next').style.display = state.train.count > 1 ? 'block' : 'none';
 
     const badge = this.query('#contract-badge');
     badge.textContent = String(state.contracts.accepted.length);
@@ -271,8 +294,14 @@ export class Hud {
             <span>🪙 ${state.train.wagonCost.toLocaleString('pt-BR')}</span></div>
           <div class="row-town"><span>🔧 <b>Reparo completo</b> — condição a 100%</span>
             <span>🪙 ${state.train.repairCost}</span></div>
-          <p class="empty">Compras rápidas ficam no painel do trem, à direita.
-          Construções e trilhos saem do painel Construir, à esquerda.</p>`;
+          <div class="row-town"><span>🚂 <b>Nova locomotiva</b> — roda num desvio próprio</span>
+            <button class="accept clickable" id="buy-loco">🪙 ${state.train.locomotiveCost.toLocaleString('pt-BR')}</button></div>
+          <div class="row-town"><span>💣 <b>Dinamite</b> — limpa pedras num raio</span>
+            <span>🪙 ${state.blastCost} por estouro</span></div>
+          <p class="empty">Você tem ${state.train.count} locomotiva(s) e ${state.lineCount} linha(s).
+          Cada locomotiva roda numa linha; crie um desvio com a agulha 🔀 antes de comprar outra.</p>`;
+        const buy = body.querySelector('#buy-loco');
+        if (buy) buy.addEventListener('click', () => this.callbacks.onBuyLocomotive());
         break;
       }
       case null:
@@ -282,6 +311,10 @@ export class Hud {
 
   setBuildHint(html: string): void {
     this.hintEl.innerHTML = html;
+  }
+
+  setMuted(muted: boolean): void {
+    this.query('#btn-sound').textContent = muted ? '🔇' : '🔊';
   }
 
   toast(message: string): void {
@@ -314,7 +347,7 @@ const TEMPLATE = `
   </div>
 
   <div id="sysbtns">
-    <button class="sysbtn clickable" id="btn-theme">☀️</button>
+    <button class="sysbtn clickable" id="btn-sound">🔊</button>
     <button class="sysbtn clickable" id="btn-help">❓</button>
     <button class="sysbtn clickable" id="btn-save">💾</button>
     <button class="sysbtn clickable" id="btn-menu">☰</button>
@@ -332,11 +365,13 @@ const TEMPLATE = `
     <div class="header">Construir</div>
     <div class="grid"></div>
     <div class="hint">Escolha uma peça de trilho e clique no terreno para assentá-la na ponta brilhante da linha.</div>
+    <button id="btn-line" class="wide-btn clickable">🔀 Linha principal</button>
     <button id="btn-undo" class="wide-btn clickable">↩️ Desfazer última peça</button>
   </div>
 
   <div id="train-panel" class="card">
-    <div class="header" id="train-name">Workhorse 1915</div>
+    <div class="header"><span id="train-name">Workhorse 1915</span>
+      <button id="btn-train-next" class="clickable">▸</button></div>
     <div class="portrait">🚂🚃🚃🚃</div>
     <div class="row"><span class="name">⏱️ Vel.</span>
       <span class="bar"><div id="speed-bar" style="background:linear-gradient(#5a9df0,#2f66c4)"></div></span>

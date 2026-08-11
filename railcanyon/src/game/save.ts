@@ -1,5 +1,6 @@
 import type { PieceKind } from '../rail/geometry.ts';
 import { isPieceKind } from '../rail/geometry.ts';
+import type { SerializedLine } from '../rail/network.ts';
 import type { BuildingKind } from '../world/buildings.ts';
 import { isBuildingKind } from '../world/buildings.ts';
 
@@ -12,15 +13,21 @@ export interface SavedBuilding {
   rot: number;
 }
 
+export interface SavedTrain {
+  lineId: number;
+  wagons: number;
+  condition: number;
+}
+
 export interface SaveData {
-  version: 1;
-  track: PieceKind[];
+  version: 2;
+  lines: SerializedLine[];
   buildings: SavedBuilding[];
+  trains: SavedTrain[];
+  blastedRocks: number[];
   coins: number;
   score: number;
   xp: number;
-  wagons: number;
-  condition: number;
 }
 
 export function writeSave(data: SaveData): boolean {
@@ -32,7 +39,10 @@ export function writeSave(data: SaveData): boolean {
   }
 }
 
-/** Lê e valida o jogo salvo; devolve null se ausente ou corrompido. */
+/**
+ * Lê e valida o jogo salvo; devolve null se ausente ou corrompido. Saves da
+ * versão 1 (linha única, antes dos desvios) são migrados.
+ */
 export function readSave(): SaveData | null {
   let raw: string | null = null;
   try {
@@ -41,26 +51,76 @@ export function readSave(): SaveData | null {
     return null;
   }
   if (!raw) return null;
+
   try {
-    const parsed = JSON.parse(raw) as Partial<SaveData>;
-    if (parsed.version !== 1) return null;
-    const track = Array.isArray(parsed.track)
-      ? parsed.track.filter((k): k is PieceKind => typeof k === 'string' && isPieceKind(k))
-      : [];
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const version = parsed.version;
+    if (version !== 1 && version !== 2) return null;
+
     const buildings = Array.isArray(parsed.buildings)
-      ? parsed.buildings.filter((b): b is SavedBuilding =>
-        !!b && typeof b.x === 'number' && typeof b.z === 'number'
-        && typeof b.rot === 'number' && typeof b.kind === 'string' && isBuildingKind(b.kind))
+      ? (parsed.buildings as unknown[]).filter(isSavedBuilding)
       : [];
+    const coins = numberOr(parsed.coins, 5960);
+    const score = numberOr(parsed.score, 0);
+    const xp = numberOr(parsed.xp, 0);
+
+    if (version === 1) {
+      const kinds = Array.isArray(parsed.track) ? readKinds(parsed.track) : [];
+      return {
+        version: 2,
+        lines: [{ anchorLineId: null, anchorPoseIndex: 0, kinds }],
+        buildings,
+        trains: [{
+          lineId: 0,
+          wagons: clampInt(numberOr(parsed.wagons, 4), 1, 8),
+          condition: clamp(numberOr(parsed.condition, 95), 0, 100),
+        }],
+        blastedRocks: [],
+        coins,
+        score,
+        xp,
+      };
+    }
+
+    const lines: SerializedLine[] = Array.isArray(parsed.lines)
+      ? (parsed.lines as unknown[]).flatMap((entry, index) => {
+        if (!isRecord(entry)) return [];
+        const anchorLineId = index === 0 ? null : intOrNull(entry.anchorLineId);
+        if (index > 0 && anchorLineId === null) return [];
+        return [{
+          anchorLineId,
+          anchorPoseIndex: Math.max(0, Math.round(numberOr(entry.anchorPoseIndex, 0))),
+          kinds: Array.isArray(entry.kinds) ? readKinds(entry.kinds) : [],
+        }];
+      })
+      : [];
+
+    const trains: SavedTrain[] = Array.isArray(parsed.trains)
+      ? (parsed.trains as unknown[]).flatMap((entry) => {
+        if (!isRecord(entry)) return [];
+        return [{
+          lineId: Math.max(0, Math.round(numberOr(entry.lineId, 0))),
+          wagons: clampInt(numberOr(entry.wagons, 4), 1, 8),
+          condition: clamp(numberOr(entry.condition, 95), 0, 100),
+        }];
+      })
+      : [];
+
+    const blastedRocks = Array.isArray(parsed.blastedRocks)
+      ? (parsed.blastedRocks as unknown[])
+        .filter((n): n is number => typeof n === 'number' && Number.isFinite(n))
+        .map((n) => Math.round(n))
+      : [];
+
     return {
-      version: 1,
-      track,
+      version: 2,
+      lines: lines.length > 0 ? lines : [{ anchorLineId: null, anchorPoseIndex: 0, kinds: [] }],
       buildings,
-      coins: numberOr(parsed.coins, 5960),
-      score: numberOr(parsed.score, 0),
-      xp: numberOr(parsed.xp, 0),
-      wagons: Math.max(1, Math.min(8, Math.round(numberOr(parsed.wagons, 4)))),
-      condition: Math.max(0, Math.min(100, numberOr(parsed.condition, 95))),
+      trains: trains.length > 0 ? trains : [{ lineId: 0, wagons: 4, condition: 95 }],
+      blastedRocks,
+      coins,
+      score,
+      xp,
     };
   } catch {
     return null;
@@ -75,6 +135,33 @@ export function clearSave(): void {
   }
 }
 
+function readKinds(values: unknown[]): PieceKind[] {
+  return values.filter((k): k is PieceKind => typeof k === 'string' && isPieceKind(k));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isSavedBuilding(value: unknown): value is SavedBuilding {
+  if (!isRecord(value)) return false;
+  return typeof value.x === 'number' && typeof value.z === 'number'
+    && typeof value.rot === 'number'
+    && typeof value.kind === 'string' && isBuildingKind(value.kind);
+}
+
 function numberOr(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function intOrNull(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.round(value) : null;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function clampInt(value: number, min: number, max: number): number {
+  return Math.round(clamp(value, min, max));
 }

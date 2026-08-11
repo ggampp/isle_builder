@@ -1,0 +1,68 @@
+name: Deploy games to GitHub Pages
+
+# Publica os dois jogos do repositório:
+#   /                → Isle Builder (raiz)
+#   /canyon-rails/   → Canyon Rails (railcanyon/)
+# Requer Pages habilitado em Settings → Pages → Source: GitHub Actions.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Instalar dependências (Isle Builder)
+        run: npm ci
+
+      - name: Testes e build (Isle Builder)
+        run: |
+          npm run test
+          npx vite build --base="/${GITHUB_REPOSITORY#*/}/"
+
+      - name: Instalar dependências (Canyon Rails)
+        working-directory: railcanyon
+        run: npm ci
+
+      - name: Testes e build (Canyon Rails)
+        working-directory: railcanyon
+        run: |
+          npm run test
+          npx tsc --noEmit
+          npx vite build --base="/${GITHUB_REPOSITORY#*/}/canyon-rails/"
+
+      - name: Juntar os dois builds
+        run: |
+          mkdir -p dist/canyon-rails
+          cp -r railcanyon/dist/. dist/canyon-rails/
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

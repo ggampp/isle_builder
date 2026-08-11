@@ -154,6 +154,30 @@ export function createRailheadMarker(): THREE.Mesh {
   return mesh;
 }
 
+/** Marcador do ponto onde um desvio nasce (agulha). */
+export function createJunctionMarker(): THREE.Mesh {
+  const mesh = new THREE.Mesh(
+    new THREE.ConeGeometry(1.1, 2.2, 6),
+    new THREE.MeshLambertMaterial({ color: '#e8bb56', flatShading: true }),
+  );
+  mesh.castShadow = true;
+  return mesh;
+}
+
+/** Círculo de alcance da dinamite, verde quando há pedra para explodir. */
+export function createBlastPreview(radius: number): THREE.Mesh {
+  const mesh = new THREE.Mesh(
+    new THREE.RingGeometry(radius - 0.5, radius, 32),
+    new THREE.MeshBasicMaterial({
+      color: '#f2564a', transparent: true, opacity: 0.7,
+      side: THREE.DoubleSide, depthWrite: false,
+    }),
+  );
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.renderOrder = 7;
+  return mesh;
+}
+
 export function disposeGroup(group: THREE.Object3D): void {
   group.traverse((obj) => {
     if (obj instanceof THREE.Mesh || obj instanceof THREE.InstancedMesh) {
