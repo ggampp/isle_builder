@@ -1,14 +1,16 @@
-import type * as THREE from 'three';
 import { WATER_LEVEL, heightAt } from '../world/heightfield.ts';
+import { TOWNS } from '../world/towns.ts';
+import type { Vec3 } from '../rail/network.ts';
 
-const MAP_SIZE = 148;
+const MAP_SIZE = 152;
 const WORLD_HALF = 220;
 
-/** Minimapa: terreno pintado uma vez da heightfield + linha + ponto do trem. */
+/** Minimapa: terreno pintado uma vez da heightfield + cidades + linha + trem. */
 export class Minimap {
   private ctx: CanvasRenderingContext2D;
   private base: ImageData | null = null;
   private trackPts: { x: number; y: number }[] = [];
+  private connected = new Set<string>();
 
   constructor(canvas: HTMLCanvasElement) {
     canvas.width = MAP_SIZE;
@@ -19,8 +21,12 @@ export class Minimap {
     this.paintBase();
   }
 
-  setTrack(points: THREE.Vector3[]): void {
+  setTrack(points: ReadonlyArray<Vec3>): void {
     this.trackPts = points.map((p) => this.toMap(p.x, p.z));
+  }
+
+  setConnected(townIds: string[]): void {
+    this.connected = new Set(townIds);
   }
 
   private toMap(x: number, z: number): { x: number; y: number } {
@@ -49,17 +55,27 @@ export class Minimap {
     this.base = this.ctx.getImageData(0, 0, MAP_SIZE, MAP_SIZE);
   }
 
-  update(trainPos: THREE.Vector3): void {
+  update(trainPos: { x: number; z: number }): void {
     const ctx = this.ctx;
     if (this.base) ctx.putImageData(this.base, 0, 0);
 
     if (this.trackPts.length > 1) {
-      ctx.strokeStyle = 'rgba(74, 52, 34, 0.9)';
-      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = 'rgba(74, 52, 34, 0.95)';
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
       ctx.moveTo(this.trackPts[0].x, this.trackPts[0].y);
       for (const p of this.trackPts) ctx.lineTo(p.x, p.y);
-      ctx.closePath();
+      ctx.stroke();
+    }
+
+    for (const town of TOWNS) {
+      const p = this.toMap(town.x, town.z);
+      ctx.fillStyle = this.connected.has(town.id) ? '#f0a72c' : '#f6ead2';
+      ctx.strokeStyle = '#4a3a26';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3.6, 0, Math.PI * 2);
+      ctx.fill();
       ctx.stroke();
     }
 
@@ -68,7 +84,7 @@ export class Minimap {
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 1.2;
     ctx.beginPath();
-    ctx.arc(t.x, t.y, 3.2, 0, Math.PI * 2);
+    ctx.arc(t.x, t.y, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
   }

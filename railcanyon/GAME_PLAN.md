@@ -43,14 +43,23 @@ wheel zoom. Botões topo-direito: tema/sol, ajuda, save, menu.
 
 ## 2. Fases de construção
 
-| Fase | Entregável | Conteúdo |
-|------|-----------|----------|
-| **S01 — Fatia vertical** *(esta sessão)* | Cena viva a 60fps | Terreno mesa+canyon procedural flat-shaded com rio; scatter instanciado (pedras/cactos/arbustos); loop de trilhos em spline com dormentes+trilhos gerados; trem (loco+vagões) seguindo a curva por arc-length com fumaça; câmera WASD/drag-pan/right-drag-turn/wheel-zoom; shell da UI (topbar, Objective, Build, painel do trem, nav inferior, minimapa real do terreno+linha+trem, chip de dica); testes de terreno/track |
-| S02 — Assentamento de trilhos | Construir a linha | Railhead brilhante, ghost verde válido/inválido, peças reta/curvas, custo em moedas, undo, ponte trestle automática sobre o rio |
-| S03 — Trem operacional | Rota e recursos | Estações/paradas, combustível (Logs) consumido, Condition caindo + Repair, +Wagon, velocidade variável, física de aceleração |
-| S04 — Construções | Cidades vivas | Catálogo Build completo, rotação `[` `]`, bomba para pedras, chips de nome, toasts |
-| S05 — Economia | Jogo com objetivos | Coins/Score/XP/Level, contratos com timer e recompensa, tutorial de objetivos, Shop/Contracts/Network/Trains funcionais |
-| S06 — Polimento e release | Build final | Save/load, áudio, performance, deploy |
+| Fase | Entregável | Estado |
+|------|-----------|--------|
+| **S01 — Fatia vertical** | Cena viva a 60fps: terreno mesa+canyon flat-shaded com rio, scatter instanciado, linha em spline, trem com fumaça, câmera WASD/drag/turn/zoom, shell da UI e minimapa | ✅ concluída |
+| **S02 — Assentamento de trilhos** | Railhead pulsante, ghost verde/vermelho, 5 tipos de peça com custo, validação de rampa e limites, desfazer com reembolso de 70%, ponte de cavalete automática sobre o rio | ✅ concluída |
+| **S03 — Trem operacional** | Estações nas cidades conectadas, paradas com embarque, lenha consumida e reabastecida, condição caindo com o uso + reparo pago, vagões compráveis, reversão no fim da linha | ✅ concluída |
+| **S04 — Construções** | 9 construções procedurais com preço, ghost no cursor, rotação `[` `]`, validação de encosta/água/sobreposição/faixa da linha, bônus reais (carga, lenha, desgaste, renda) | ✅ concluída |
+| **S05 — Economia e objetivos** | Moedas/pontos/XP/níveis, contratos com timer, recompensa e expiração, 6 objetivos-tutorial encadeados, painéis Trens/Rede/Contratos/Loja, save/load em `localStorage` | ✅ concluída |
+| S06 — Polimento e release | Áudio, desvios (sidings) e ramais, ferramenta de dinamite para pedras, bolsões de floresta de pinheiros, deploy | ⏳ pendente |
+
+### O laço de jogo hoje
+
+Escolher uma peça → o ghost aparece na ponta brilhante da linha → clicar (ou Espaço)
+assenta e cobra as moedas → ao chegar a 26 m de uma cidade ela conecta, vira parada
+do trem e libera contratos → o trem circula sozinho, para nas estações, reabastece,
+carrega e entrega → contratos concluídos pagam moedas/pontos/XP → o nível sobe e
+libera contratos maiores → moedas viram trilhos, construções e vagões. Sem derrota:
+sem lenha o trem apenas desacelera, e contratos expirados só somem.
 
 ## 3. Arquitetura (espelha o padrão do Isle Builder)
 
@@ -59,17 +68,22 @@ do Isle Builder ortográfico), Vitest para lógica pura.
 
 - `src/core/` — `loop.ts` (rAF com delta clampado), `camera.ts` (rig orbital:
   alvo no chão, yaw por right-drag, pan WASD/left-drag no plano, dolly por wheel),
-  `input.ts` (estado cru de pointer/teclado/wheel).
-- `src/world/` — `heightfield.ts` (função de altura determinística: mesa + rio
-  cavado + buttes; puro, testável), `terrain.ts` (malha flat-shaded com cores por
-  vértice altura/inclinação + plano d'água), `scatter.ts` (InstancedMesh de
-  pedras/cactos/arbustos posicionados pela heightfield, fora do rio e da linha).
-- `src/rail/` — `track.ts` (spline fechada CatmullRom amostrada por arc-length;
-  dormentes/trilhos instanciados; puro o suficiente para testes), `train.ts`
-  (composição low-poly da loco+vagões; avanço por arc-length; fumaça por sprites).
-- `src/ui/` — `hud.ts` (DOM overlay: topbar, cards, painéis, nav, toasts),
-  `minimap.ts` (canvas 2D: terreno da heightfield + polilinha da track + ponto do
-  trem), `styles.css`.
+  `input.ts` (estado cru de pointer/teclado/wheel; distingue clique de arrasto).
+- `src/world/` — `heightfield.ts` (altura determinística: mesa + rio cavado +
+  buttes + platôs das cidades; puro, testável), `terrain.ts` (malha flat-shaded
+  com cor por face), `scatter.ts` (InstancedMesh de pedras/cactos/arbustos),
+  `towns.ts` (3 cidades com layout de casas e placas), `buildings.ts` (9 modelos
+  procedurais + material de ghost), `raycast.ts` (interseção analítica do cursor
+  com a heightfield, sem tocar na malha).
+- `src/rail/` — `geometry.ts` (poses puras das peças: reta e 4 curvas),
+  `network.ts` (linha construída: railhead, validação, caminho amostrado por
+  arc-length com folga de ponte e suavização), `trackview.ts` (dormentes/trilhos
+  instanciados, cavaletes, ghost da peça, anel do railhead), `train.ts` (posição
+  sempre função de `s`; paradas, lenha, condição, carga, fumaça).
+- `src/game/` — `game.ts` (orquestra tudo), `economy.ts`, `contracts.ts`,
+  `objectives.ts`, `save.ts` (`localStorage` validado ao ler).
+- `src/ui/` — `hud.ts` (DOM overlay reativo: topbar, cards, painéis, nav, toasts),
+  `minimap.ts` (canvas 2D: terreno + cidades + linha + trem), `styles.css`.
 
 Regras herdadas do repo-mãe (ver `CLAUDE.md` na raiz): sem parameter properties
 (TS1294/`erasableSyntaxOnly`), sem `const enum`, `npm run build` (gate `tsc`) antes

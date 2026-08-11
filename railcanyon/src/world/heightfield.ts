@@ -65,6 +65,16 @@ export function riverDistance(x: number, z: number): number {
   return dist - radius;
 }
 
+/**
+ * Platôs planos onde ficam as cidades — o terreno é achatado nesse raio para
+ * que casas e trilhos assentem bem. Mantidos longe do rio de propósito.
+ */
+export const TOWN_PADS: ReadonlyArray<{ x: number; z: number; r: number; level: number }> = [
+  { x: -92, z: -34, r: 30, level: 6.4 },
+  { x: 96, z: -62, r: 30, level: 7.1 },
+  { x: -12, z: 186, r: 28, level: 6.8 },
+];
+
 const RIVER_HALF_WIDTH = 13;
 
 export function isRiver(x: number, z: number): boolean {
@@ -98,6 +108,15 @@ export function heightAt(x: number, z: number): number {
     const carve = t * t * (3 - 2 * t); // 0 no rio, 1 na mesa
     const bed = -2.2 + fbm(x * 0.06, z * 0.06) * 0.8;
     h = bed + (h - bed) * carve;
+  }
+
+  // Platôs das cidades: achatam o relevo com borda suave.
+  for (const pad of TOWN_PADS) {
+    const pd = Math.hypot(x - pad.x, z - pad.z) / pad.r;
+    if (pd < 1) {
+      const t = 1 - pd * pd;
+      h += (pad.level - h) * t * t;
+    }
   }
   return h;
 }

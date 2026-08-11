@@ -23,6 +23,19 @@ export class CanyonCamera {
     this.camera.updateProjectionMatrix();
   }
 
+  /** Recentra a câmera num ponto do mundo (seguir trem, focar cidade). */
+  focusOn(x: number, z: number, distance?: number): void {
+    this.target.x = x;
+    this.target.z = z;
+    if (distance !== undefined) {
+      this.desiredDistance = THREE.MathUtils.clamp(distance, 18, 320);
+    }
+  }
+
+  get targetPosition(): THREE.Vector3 {
+    return this.target.clone();
+  }
+
   update(dt: number, input: InputManager): void {
     const { dx, dy, wheel } = input.consumeFrameDeltas();
 

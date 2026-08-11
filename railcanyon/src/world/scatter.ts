@@ -22,25 +22,40 @@ interface ScatterSpec {
   yOffset: number;
 }
 
+export interface KeepOutCircle {
+  x: number;
+  z: number;
+  r: number;
+}
+
 /**
- * Vegetação e pedras instanciadas. Evita o rio (altura) e a faixa da linha
- * férrea (distância aos pontos amostrados da track).
+ * Vegetação e pedras instanciadas. Evita a água, encostas fortes, os pontos
+ * marcados (cidades) e a faixa reservada de qualquer caminho informado.
  */
-export function buildScatter(trackPoints: THREE.Vector3[]): THREE.Group {
+export function buildScatter(
+  avoidPoints: THREE.Vector3[],
+  keepOut: KeepOutCircle[] = [],
+): THREE.Group {
   const group = new THREE.Group();
   const rng = makeRng(20260811);
 
   const cell = 8;
   const occupied = new Set<string>();
-  for (const p of trackPoints) {
+  for (const p of avoidPoints) {
     for (let ox = -1; ox <= 1; ox++) {
       for (let oz = -1; oz <= 1; oz++) {
         occupied.add(`${Math.floor(p.x / cell) + ox},${Math.floor(p.z / cell) + oz}`);
       }
     }
   }
-  const nearTrack = (x: number, z: number): boolean =>
-    occupied.has(`${Math.floor(x / cell)},${Math.floor(z / cell)}`);
+
+  const blocked = (x: number, z: number): boolean => {
+    if (occupied.has(`${Math.floor(x / cell)},${Math.floor(z / cell)}`)) return true;
+    for (const circle of keepOut) {
+      if (Math.hypot(circle.x - x, circle.z - z) < circle.r) return true;
+    }
+    return false;
+  };
 
   const rockGeo = new THREE.IcosahedronGeometry(1, 0);
   rockGeo.translate(0, 0.35, 0);
@@ -52,20 +67,21 @@ export function buildScatter(trackPoints: THREE.Vector3[]): THREE.Group {
   flowerGeo.translate(0, 0.2, 0);
 
   const specs: ScatterSpec[] = [
-    { count: 700, geometry: rockGeo, colors: ['#c05038', '#d97e4a', '#a63c2e', '#b5573c'],
+    { count: 760, geometry: rockGeo, colors: ['#c05038', '#d97e4a', '#a63c2e', '#b5573c'],
       minScale: 0.5, maxScale: 2.6, maxSlope: 1.2, yOffset: -0.15 },
-    { count: 380, geometry: cactusGeo, colors: ['#3f9b4f', '#2f8040', '#4dae5c'],
+    { count: 420, geometry: cactusGeo, colors: ['#3f9b4f', '#2f8040', '#4dae5c'],
       minScale: 0.5, maxScale: 1.25, maxSlope: 0.35, yOffset: -0.1 },
-    { count: 420, geometry: bushGeo, colors: ['#5da95a', '#7bbf67', '#4c9a52'],
+    { count: 460, geometry: bushGeo, colors: ['#5da95a', '#7bbf67', '#4c9a52'],
       minScale: 0.6, maxScale: 1.4, maxSlope: 0.4, yOffset: -0.1 },
-    { count: 260, geometry: flowerGeo, colors: ['#d977a8', '#c95f92', '#e08fba'],
+    { count: 280, geometry: flowerGeo, colors: ['#d977a8', '#c95f92', '#e08fba'],
       minScale: 0.6, maxScale: 1.2, maxSlope: 0.35, yOffset: -0.05 },
   ];
 
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
+  const matrix = new THREE.Matrix4();
+  const quat = new THREE.Quaternion();
   const scale = new THREE.Vector3();
   const color = new THREE.Color();
+  const axis = new THREE.Vector3(0, 1, 0);
 
   for (const spec of specs) {
     const mesh = new THREE.InstancedMesh(
@@ -82,12 +98,12 @@ export function buildScatter(trackPoints: THREE.Vector3[]): THREE.Group {
       const y = heightAt(x, z);
       if (y < WATER_LEVEL + 0.6) continue;
       if (slopeAt(x, z) > spec.maxSlope) continue;
-      if (nearTrack(x, z)) continue;
+      if (blocked(x, z)) continue;
       const s = spec.minScale + rng() * (spec.maxScale - spec.minScale);
-      q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rng() * Math.PI * 2);
+      quat.setFromAxisAngle(axis, rng() * Math.PI * 2);
       scale.set(s, s * (0.85 + rng() * 0.3), s);
-      m.compose(new THREE.Vector3(x, y + spec.yOffset, z), q, scale);
-      mesh.setMatrixAt(placed, m);
+      matrix.compose(new THREE.Vector3(x, y + spec.yOffset, z), quat, scale);
+      mesh.setMatrixAt(placed, matrix);
       color.set(spec.colors[Math.floor(rng() * spec.colors.length)]);
       mesh.setColorAt(placed, color);
       placed++;
