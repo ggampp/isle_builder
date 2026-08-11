@@ -2,12 +2,12 @@ import type { Tilemap } from '../world/tilemap.ts';
 import { TILE_SIZE } from '../world/constants.ts';
 import type { Tool, PreviewTile } from './toolsystem.ts';
 
-export const MIN_RADIUS_TILES = 1;
-export const MAX_RADIUS_TILES = 10;
+export const MIN_RADIUS_TILES = 10;
+export const MAX_RADIUS_TILES = 30;
 
 /** Pincel circular; interpola entre pontos do traço para não deixar buracos. */
 export class Brush implements Tool {
-  radiusTiles = 3;
+  radiusTiles = MIN_RADIUS_TILES;
   spacing = 1; // SPACE multiplier
 
   private readonly tilemap: Tilemap;

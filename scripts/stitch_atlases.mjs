@@ -11,7 +11,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 
 const PROP_COLS = 8;
-const PROP_CELL = 48;
+/** Must match PROP_CELL_PX in src/render/art/propsAtlas.ts */
+const PROP_CELL = 64;
 const ENTITY_COLS = 16;
 const ENTITY_CELL = 32;
 

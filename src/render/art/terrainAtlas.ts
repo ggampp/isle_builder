@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { MaskBit } from '../../world/autotiler.ts';
+import { TERRAIN_MASK_CELL_PX } from './worldScale.ts';
 import { Palette } from './palette.ts';
 
 const ATLAS_COLS = 16;
 const ATLAS_ROWS = 16;
-const CELL_PIXELS = 64;
+const CELL_PIXELS = TERRAIN_MASK_CELL_PX;
 
 export type TerrainKind = 'sand' | 'grass' | 'path' | 'bridge' | 'cliff';
 

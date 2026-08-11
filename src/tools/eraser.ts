@@ -4,7 +4,7 @@ import type { Tool, PreviewTile } from './toolsystem.ts';
 import { MIN_RADIUS_TILES, MAX_RADIUS_TILES } from './brush.ts';
 
 export class EraserTool implements Tool {
-  radiusTiles = 3;
+  radiusTiles = MIN_RADIUS_TILES;
   spacing = 1;
 
   private readonly tilemap: Tilemap;

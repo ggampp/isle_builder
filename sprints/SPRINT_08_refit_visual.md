@@ -30,6 +30,12 @@ marca d'água); densidade/variedade de props no nível da referência.
 - Ilha inicial: o jogo deve abrir com uma ilha já pintada (parte grama, parte
   só areia), nunca em oceano vazio (pedido do usuário 2026-07-02, adicionado
   ao escopo original).
+- Câmera: `MAX_ZOOM` capado de 8 → 4 em `src/core/camera.ts` (aprovado pelo
+  usuário 2026-07-02): 4x = tile de 16 world units em 64px de tela = 1:1 com
+  a célula de 64px do atlas; acima disso o `NearestFilter` só amplia texels
+  ("pixels gigantes"). Enquadramento inicial mantido (ilha seed centrada em
+  (0,0), câmera nasce em (0,0) com zoom 1 ≈ mesma fração de tela da
+  referência — medido: ~52–57% da altura nos dois).
 
 **Fora:**
 - Qualquer sistema novo de gameplay (fica para Sprint 09/10).
@@ -117,23 +123,50 @@ comparando screenshots:
   `NearestFilter`/`false` para `LinearMipmapLinearFilter`/`true` — a
   minificação de 64px (célula) → ~16px (tile em zoom padrão) sem mipmap
   gerava aliasing (Moiré) por cima da repetição já mencionada.
-- [ ] **Não verificado com confiança visual**: as duas capturas de tela via
-  `computer` tool (JPEG) mostraram um padrão de pontos regulares na
-  areia/grama que não mudou perceptivelmente após as duas rodadas de ajuste
-  acima. Tentativa de ler os pixels reais via `canvas.toDataURL()`/
-  `gl.readPixels()` falhou (buffer WebGL vazio — aba automatizada fica
-  `document.hidden`, mesmo gotcha já documentado no `CLAUDE.md`). Consistente
-  com ser o artefato de compressão JPEG já conhecido ("dot pattern" falso em
-  áreas de cor chapada), mas **não confirmado por falta de captura confiável
-  nesta sessão** — pedir para o usuário olhar `localhost:5183` num navegador
-  normal antes de investir mais tempo aqui.
+- [ ] **CONFIRMADO 2026-07-02 (2ª sessão): o padrão de pontos é REAL, não é
+  artefato JPEG.** Evidência: (a) os pontos **escalam com o zoom do jogo**
+  (zoom sintético via `WheelEvent` até 4x — pontos viram círculos grandes,
+  um furo por vértice de 4 tiles, cor do oceano visível através de TODAS as
+  camadas de terreno); (b) inspeção pixel a pixel do atlas real, importando
+  o módulo direto na página (`await import('/src/render/art/terrainAtlas.ts')`
+  no dev server Vite — técnica que driblou o problema de `document.hidden`):
+  célula do mask **255** (interior, 8 vizinhos) = 0% transparente (correta,
+  sólida); célula do mask **15** (4 arestas, zero bits de canto) = 13,1%
+  transparente com os 4 cantos recortados — **a única célula com exatamente
+  4 recortes de canto, e é exatamente o desenho dos furos renderizados**.
+  Conclusão: tiles interiores estão sendo desenhados com a célula do mask 15
+  em vez da 255. Suspeito nº 1: mapeamento de linha do atlas (v/`flipY`) em
+  `buildLayerGeometry` (`src/render/chunkmesh.ts`) — trocar linha 15 ↔ linha
+  0 mapeia 255→15 com a mesma coluna, o que bate perfeitamente. Ver seção
+  "Próximos passos" do handoff `AIMemory/handoffs/2026-07-02-sprint-08-task4-diagnostico-dots.md`
+  para o passo de verificação decisivo antes de aplicar o fix.
 
-### 4 — Props
-- [ ] Depois do atlas corrigido: aumentar densidade/variedade do scatter em
-  `propplacement.ts` (aglomerados, variação de escala/rotação) para aproximar
-  do visual "floresta viva" da referência.
-- [ ] Sombra suave sob props estáticos (hoje só agentes simulados têm sombra
-  garantida — confirmar cobertura para árvores/rochas/arbustos).
+### 4 — Props (implementado 2026-07-02, 2ª sessão)
+- [x] **Sprites com proporção correta e maiores**: `propWorldSize`
+  (`src/render/art/propSpriteUtils.ts`) reescrito — as células do atlas são
+  quadradas (48px), mas os quads eram retangulares por categoria, espremendo
+  a arte (árvores viravam "palitos" de 16×48). Agora todos os quads são
+  quadrados: vegetação 44×44 (copa ~2 tiles, como na referência), decor
+  24×24, utility ≥20, building = footprint. Footprint de colisão inalterado.
+- [x] **Variação visual por prop**: `PlacedProp` ganhou `scale?` (0.85–1.2) e
+  `flip?` (espelhamento horizontal; material virou `DoubleSide` para o quad
+  espelhado não sumir). Aplicado só a vegetação/decor — construções ficam
+  uniformes. Persistem no undo/redo de graça (viajam dentro do objeto).
+- [x] **Ilha seed populada**: `seedStarterProps` (`src/world/seedIsland.ts`)
+  — RNG determinístico (mulberry32, mesma ilha todo boot), ~11% árvores +
+  ~14% flora pequena por tile de grama, ~5% scatter por tile de areia
+  (palmeiras/conchas/rochas), tabelas ponderadas, valida com `canPlaceProp`,
+  bypassa histórico (mesma razão do terreno seed). Ligado em `main.ts`.
+- [x] **Scatter em aglomerados**: `propplacement.ts` — cada passo de scatter
+  coloca 1–2 vizinhos extras com jitter ±2 tiles, com variação de escala/flip.
+- [x] Sombra sob props estáticos: já existia para todos (PropRenderer desenha
+  shadow mesh sempre); corrigida para escalar com a largura **visual** do
+  sprite (antes usava o footprint e virava um risco minúsculo sob a copa).
+- [x] Verificado no browser: ilha nasce "viva" (floresta + praia decorada),
+  FPS 60 no boot, zero erros de console, build + 52 testes verdes.
+- [ ] Reavaliar densidade/mix contra a referência **depois** que o bug dos
+  furos de canto (Task 3) for corrigido — os furos dominam a leitura visual
+  hoje e impedem comparação justa.
 
 ### 5 — QA visual
 - [ ] Comparar screenshot lado a lado com `assets/status/jogo_exemplo.png` em
@@ -199,3 +232,10 @@ diagnóstico acima. Esta sprint foi inserida **antes** das sprints de
 persistência e progressão (que foram renumeradas de 08→09 e 09→10) porque a
 fidelidade visual é considerada bloqueante antes de investir em save/load e
 progressão sobre uma base visual que ainda vai mudar bastante.
+
+## Atualizacao 2026-07-02 - fix dos furos do terreno
+
+- [x] `src/render/chunkmesh.ts` agora usa as constantes do atlas real (`TERRAIN_ATLAS_COLS/ROWS`) e inverte a linha V para compensar `CanvasTexture.flipY`. Isso corrige a causa isolada no handoff: tiles interiores com mask 255 estavam amostrando a linha da mask 15, criando um furo em cada vertice de 4 tiles.
+- [x] Adicionado `src/render/chunkmesh.test.ts`, cobrindo os ranges de UV para mask 0 e mask 255.
+- [x] `npm run test` (53) e `npm run build` verdes.
+- [ ] Checagem visual side-by-side ainda pendente em navegador normal: `agent-browser` falhou neste ambiente com `CDP response channel closed`.

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { CHUNK_SIZE, TILE_SIZE } from '../world/constants.ts';
 import { chunkKey } from '../world/tilemap.ts';
 import type { CoastManager } from '../world/coast.ts';
+import type { Tilemap } from '../world/tilemap.ts';
 import { DecorationKind } from '../world/coast.ts';
 import { getPropDefinition } from '../props/catalog.ts';
 import type { PropAtlas } from './art/propsAtlas.ts';
@@ -157,6 +158,22 @@ export class CoastRenderer {
     for (const key of keys) {
       const [cxStr, cyStr] = key.split(',');
       this.rebuildChunk(Number(cxStr), Number(cyStr));
+    }
+  }
+
+  /** Remove meshes de chunks que não existem mais no tilemap (ex.: após limpar o mapa). */
+  reconcileChunks(tilemap: Tilemap): void {
+    const activeKeys = new Set<string>();
+    for (const chunk of tilemap.allChunks()) {
+      activeKeys.add(chunkKey(chunk.cx, chunk.cy));
+    }
+    for (const key of [...this.meshesByChunk.keys()]) {
+      if (activeKeys.has(key)) continue;
+      const meshes = this.meshesByChunk.get(key)!;
+      this.disposeMesh(meshes.shallow);
+      this.disposeMesh(meshes.foam);
+      this.disposeDecoGroup(meshes.decorations);
+      this.meshesByChunk.delete(key);
     }
   }
 

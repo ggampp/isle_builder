@@ -81,14 +81,37 @@ export class PropPlacementController {
   }
 
   private tryPlace(def: NonNullable<ReturnType<typeof getPropDefinition>>, tileX: number, tileY: number): void {
+    this.placeOne(def, tileX, tileY);
+
+    // Props de scatter caem em aglomerado (1–2 vizinhos com jitter) em vez de
+    // um item isolado por passo — aproxima do adensamento da referência
+    // (jogo_exemplo.png) sem exigir dezenas de passadas do usuário.
+    if (def.scatter) {
+      const extras = 1 + Math.floor(Math.random() * 2);
+      for (let i = 0; i < extras; i++) {
+        const ox = tileX + Math.floor(Math.random() * 5) - 2;
+        const oy = tileY + Math.floor(Math.random() * 5) - 2;
+        if (ox === tileX && oy === tileY) continue;
+        this.placeOne(def, ox, oy);
+      }
+    }
+  }
+
+  private placeOne(def: NonNullable<ReturnType<typeof getPropDefinition>>, tileX: number, tileY: number): void {
     const check = canPlaceProp(this.tilemap, this.propMap, def, tileX, tileY, getPropDefinition);
     if (!check.valid) return;
 
+    // Variação visual só para o que é orgânico — construções/utensílios
+    // colocados deliberadamente ficam uniformes.
+    const organic = def.category === 'vegetation' || def.category === 'decor';
     const placed: PlacedProp = {
       uid: createPropUid(),
       defId: def.id,
       tileX,
       tileY,
+      ...(organic
+        ? { scale: 0.85 + Math.random() * 0.35, flip: Math.random() < 0.5 }
+        : {}),
     };
     this.propMap.add(placed, def);
   }

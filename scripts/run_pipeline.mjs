@@ -93,7 +93,7 @@ async function phaseProps() {
       prompt,
       rawDir: path.join(RAW, 'props'),
       outDir: PROPS_OUT,
-      cellPx: 48,
+      cellPx: 64,
       bottomAlign: treeIds.has(id),
       skipExisting,
     });

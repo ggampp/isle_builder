@@ -9,6 +9,7 @@ import {
   type EntityAtlas,
   type EntitySpriteId,
 } from './entityAtlas.ts';
+import { entitySpriteSize, type EntitySpriteKind } from './art/worldScale.ts';
 import { Palette } from './art/palette.ts';
 
 const MAX_V = SIM_CONFIG.maxVillagers;
@@ -49,25 +50,25 @@ export class EntityRenderer {
       depthTest: false,
     });
 
-    this.addBucket('villager', EntitySprite.Villager, MAX_V, 18, 22, true);
-    this.addBucket('fish', EntitySprite.Fish, MAX_F, 14, 10, false);
-    this.addBucket('whale', EntitySprite.Whale, MAX_M, 48, 24, false);
-    this.addBucket('shark', EntitySprite.Shark, MAX_M, 28, 12, false);
-    this.addBucket('orca', EntitySprite.Orca, MAX_M, 32, 14, false);
-    this.addBucket('swordfish', EntitySprite.Swordfish, MAX_M, 26, 10, false);
-    this.addBucket('rowboat', EntitySprite.Rowboat, MAX_S, 22, 16, false);
-    this.addBucket('galleon', EntitySprite.Galleon, MAX_S, 44, 32, false);
-    this.addBucket('spray', EntitySprite.Spray, 8, 14, 20, false);
+    this.addBucket('villager', EntitySprite.Villager, MAX_V, 'villager', true);
+    this.addBucket('fish', EntitySprite.Fish, MAX_F, 'fish', false);
+    this.addBucket('whale', EntitySprite.Whale, MAX_M, 'whale', false);
+    this.addBucket('shark', EntitySprite.Shark, MAX_M, 'shark', false);
+    this.addBucket('orca', EntitySprite.Orca, MAX_M, 'orca', false);
+    this.addBucket('swordfish', EntitySprite.Swordfish, MAX_M, 'swordfish', false);
+    this.addBucket('rowboat', EntitySprite.Rowboat, MAX_S, 'rowboat', false);
+    this.addBucket('galleon', EntitySprite.Galleon, MAX_S, 'galleon', false);
+    this.addBucket('spray', EntitySprite.Spray, 8, 'spray', false);
   }
 
   private addBucket(
     key: string,
     spriteId: EntitySpriteId,
     max: number,
-    w: number,
-    h: number,
+    sizeKind: EntitySpriteKind,
     shadow: boolean,
   ): void {
+    const { w, h } = entitySpriteSize(sizeKind);
     const geo = new THREE.PlaneGeometry(w, h);
     const mat = createEntityMaterial(this.atlas, spriteId, 0);
     const mesh = new THREE.InstancedMesh(geo, mat, max);
@@ -244,7 +245,8 @@ export class EntityRenderer {
       if (m.kind !== EntityKind.Whale) continue;
       if (m.sprayCooldown > 0.3) continue;
       if (i >= b.max) break;
-      this.dummy.position.set(m.x, m.y + 18, 0.65);
+      const sprayH = entitySpriteSize('spray').h;
+      this.dummy.position.set(m.x, m.y + sprayH * 0.85, 0.65);
       this.dummy.scale.set(1, 1, 1);
       this.dummy.rotation.set(0, 0, 0);
       this.dummy.updateMatrix();

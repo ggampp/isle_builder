@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { TILE_SIZE } from '../world/constants.ts';
 import type { PropDefinition } from '../props/catalog.ts';
 import { getPropDefinition } from '../props/catalog.ts';
 import type { PropMap } from '../props/propmap.ts';
@@ -86,11 +85,14 @@ export class PropRenderer {
   }
 
   private createPropMeshes(
-    prop: { uid: string; tileX: number; tileY: number },
+    prop: { uid: string; tileX: number; tileY: number; scale?: number; flip?: boolean },
     def: PropDefinition,
     renderOrder: number,
   ): void {
-    const { w, h } = propWorldSize(def);
+    const variation = prop.scale ?? 1;
+    const base = propWorldSize(def);
+    const w = base.w * variation;
+    const h = base.h * variation;
     const feet = propFeetWorld(def, prop.tileX, prop.tileY);
 
     const spriteGeo = new THREE.PlaneGeometry(w, h);
@@ -98,10 +100,13 @@ export class PropRenderer {
     const spriteMat = createPropSpriteMaterial(def, this.atlas);
     const sprite = new THREE.Mesh(spriteGeo, spriteMat);
     sprite.position.set(feet.x, feet.y + h * 0.5, 0.5);
+    if (prop.flip) sprite.scale.x = -1;
     sprite.renderOrder = renderOrder;
 
-    const shadowW = def.widthTiles * TILE_SIZE * def.shadowScale * 0.8;
-    const shadowH = def.widthTiles * TILE_SIZE * def.shadowScale * 0.35;
+    // Sombra proporcional à largura VISUAL do sprite (não ao footprint) — com
+    // sprites maiores que o footprint, a sombra antiga virava um risco minúsculo.
+    const shadowW = w * def.shadowScale * 0.5;
+    const shadowH = shadowW * 0.4;
     const shadowGeo = new THREE.PlaneGeometry(shadowW, shadowH);
     const shadow = new THREE.Mesh(shadowGeo, this.shadowMaterial);
     shadow.position.set(feet.x, feet.y + shadowH * 0.2, 0.2);

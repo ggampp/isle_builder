@@ -2,26 +2,8 @@ import * as THREE from 'three';
 import { TILE_SIZE } from '../../world/constants.ts';
 import type { PropDefinition } from '../../props/catalog.ts';
 import type { PropAtlas } from './propsAtlas.ts';
-import { PROP_CELL_PX } from './propsAtlas.ts';
 
-/** World-space size for a prop sprite (may extend above footprint). */
-export function propWorldSize(def: PropDefinition): { w: number; h: number } {
-  const baseW = def.widthTiles * TILE_SIZE;
-  const baseH = def.heightTiles * TILE_SIZE;
-
-  switch (def.category) {
-    case 'vegetation':
-      return { w: baseW, h: Math.max(baseH, PROP_CELL_PX) };
-    case 'decor':
-      return { w: TILE_SIZE, h: TILE_SIZE * 1.5 };
-    case 'building':
-      return { w: baseW, h: Math.max(baseH, PROP_CELL_PX * (def.heightTiles / Math.max(1, def.widthTiles))) };
-    case 'utility':
-      return { w: baseW, h: Math.max(baseH, TILE_SIZE * 1.25) };
-    default:
-      return { w: baseW, h: def.heightTiles === 1 ? TILE_SIZE : baseH };
-  }
-}
+export { propWorldSize } from './worldScale.ts';
 
 /** Feet position (anchor) in world coords — bottom of the footprint. */
 export function propFeetWorld(
@@ -62,6 +44,9 @@ export function createPropSpriteMaterial(
     depthWrite: false,
     depthTest: false,
     alphaTest: 0.01,
+    // Sprites podem ser espelhados via mesh.scale.x = -1 (variação visual),
+    // o que inverte o winding do quad — DoubleSide evita que sumam.
+    side: THREE.DoubleSide,
     ...extra,
   });
 }

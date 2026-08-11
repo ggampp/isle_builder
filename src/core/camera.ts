@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import type { InputManager } from './input.ts';
 
-const MIN_ZOOM = 0.1;
-const MAX_ZOOM = 8;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 1;
 /** Quanto maior, mais rápido o zoom converge ao alvo (por segundo). */
 const ZOOM_EASE_RATE = 12;
 /** Sensibilidade do wheel: fator multiplicativo de zoom por unidade de deltaY. */
@@ -27,9 +27,9 @@ export class IsleCamera {
 
   x = 0;
   y = 0;
-  zoom = 1;
+  zoom = MIN_ZOOM;
 
-  private targetZoom = 1;
+  private targetZoom = MIN_ZOOM;
   private viewportWidth = 1;
   private viewportHeight = 1;
   private zoomAnchorWorld: { x: number; y: number } | null = null;

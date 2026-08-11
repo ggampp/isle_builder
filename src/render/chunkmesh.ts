@@ -3,9 +3,9 @@ import { CHUNK_SIZE, TILE_SIZE } from '../world/constants.ts';
 import type { Chunk, Tilemap } from '../world/tilemap.ts';
 import { computeBlobMask, sampleNeighbors } from '../world/autotiler.ts';
 import { TerrainLayer } from '../world/layers.ts';
-import { ATLAS_GRID_COLS, ATLAS_GRID_ROWS } from './placeholderAtlas.ts';
+import { TERRAIN_ATLAS_COLS, TERRAIN_ATLAS_ROWS } from './art/terrainAtlas.ts';
 
-/** Decide se um tile entra no mesh desta camada de render. */
+/** Decide if a tile contributes to this render layer mesh. */
 function shouldRenderTile(layer: number, targetLayer: number): boolean {
   switch (targetLayer) {
     case TerrainLayer.Sand:
@@ -23,21 +23,63 @@ function shouldRenderTile(layer: number, targetLayer: number): boolean {
   }
 }
 
+/** Alcance (em tiles) da faixa de areia molhada a partir da água. */
+const WET_RANGE_TILES = 2.0;
+/** Raio de busca por água ao redor de um canto de tile. */
+const WET_SEARCH_RADIUS = 3;
+
 /**
- * Monta a geometria de um chunk para uma única camada (ex.: só os tiles
- * com `layer >= threshold`), um quad UV-mapeado no atlas blob por tile.
- * Retorna `null` se nenhum tile do chunk atinge essa camada (chunk vazio
- * para essa camada não precisa de mesh).
- *
- * Convenção de UV (ver render/placeholderAtlas.ts): mundo Norte (+Y) fica
- * no topo do atlas (v pequeno), Sul (-Y) embaixo (v grande) — resultado do
- * `flipY` padrão do THREE.CanvasTexture combinado com o canvas ter y
- * crescendo para baixo.
+ * Quão "molhado" (0..1) é um canto de tile, pela distância à água mais próxima.
+ * Interpolado por vértice no shader, dá um gradiente suave da linha d'água
+ * para o interior da praia.
  */
-export function buildLayerGeometry(tilemap: Tilemap, chunk: Chunk, threshold: number): THREE.BufferGeometry | null {
+function cornerWetness(tilemap: Tilemap, cornerX: number, cornerY: number): number {
+  let minD2 = Infinity;
+  for (let ty = cornerY - WET_SEARCH_RADIUS; ty < cornerY + WET_SEARCH_RADIUS; ty++) {
+    for (let tx = cornerX - WET_SEARCH_RADIUS; tx < cornerX + WET_SEARCH_RADIUS; tx++) {
+      if (tilemap.getLayer(tx, ty) !== TerrainLayer.Water) continue;
+      const dx = tx + 0.5 - cornerX;
+      const dy = ty + 0.5 - cornerY;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < minD2) minD2 = d2;
+    }
+  }
+  if (minD2 === Infinity) return 0;
+  const t = 1 - (Math.sqrt(minD2) - 0.7) / WET_RANGE_TILES;
+  return Math.min(1, Math.max(0, t));
+}
+
+export interface LayerGeometryOptions {
+  /** Emite o atributo por-vértice `aWet` (areia molhada perto da água). */
+  shoreWetness?: boolean;
+}
+
+/**
+ * Builds one chunk geometry for one terrain render layer. CanvasTexture flips
+ * the generated canvas vertically on upload, so UVs must address the inverted
+ * atlas row. Without that, mask 255 samples row 0 (mask 15) and solid terrain
+ * gets periodic corner holes.
+ */
+export function buildLayerGeometry(
+  tilemap: Tilemap,
+  chunk: Chunk,
+  threshold: number,
+  options?: LayerGeometryOptions,
+): THREE.BufferGeometry | null {
   const positions: number[] = [];
   const uvs: number[] = [];
   const indices: number[] = [];
+  const wets: number[] = [];
+  const wetCache = new Map<string, number>();
+  const wetAt = (cx: number, cy: number): number => {
+    const key = `${cx},${cy}`;
+    let w = wetCache.get(key);
+    if (w === undefined) {
+      w = cornerWetness(tilemap, cx, cy);
+      wetCache.set(key, w);
+    }
+    return w;
+  };
   let quadCount = 0;
 
   for (let ly = 0; ly < CHUNK_SIZE; ly++) {
@@ -48,12 +90,13 @@ export function buildLayerGeometry(tilemap: Tilemap, chunk: Chunk, threshold: nu
       const tileX = chunk.cx * CHUNK_SIZE + lx;
       const tileY = chunk.cy * CHUNK_SIZE + ly;
       const mask = computeBlobMask(sampleNeighbors(tilemap, tileX, tileY, threshold));
-      const col = mask % ATLAS_GRID_COLS;
-      const row = Math.floor(mask / ATLAS_GRID_COLS);
-      const u0 = col / ATLAS_GRID_COLS;
-      const u1 = (col + 1) / ATLAS_GRID_COLS;
-      const v0 = row / ATLAS_GRID_ROWS;
-      const v1 = (row + 1) / ATLAS_GRID_ROWS;
+      const col = mask % TERRAIN_ATLAS_COLS;
+      const row = Math.floor(mask / TERRAIN_ATLAS_COLS);
+      const atlasRow = TERRAIN_ATLAS_ROWS - 1 - row;
+      const u0 = col / TERRAIN_ATLAS_COLS;
+      const u1 = (col + 1) / TERRAIN_ATLAS_COLS;
+      const v0 = atlasRow / TERRAIN_ATLAS_ROWS;
+      const v1 = (atlasRow + 1) / TERRAIN_ATLAS_ROWS;
 
       const x0 = tileX * TILE_SIZE;
       const y0 = tileY * TILE_SIZE;
@@ -64,6 +107,15 @@ export function buildLayerGeometry(tilemap: Tilemap, chunk: Chunk, threshold: nu
       positions.push(x0, y0, 0, x1, y0, 0, x1, y1, 0, x0, y1, 0);
       uvs.push(u0, v1, u1, v1, u1, v0, u0, v0);
       indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      if (options?.shoreWetness) {
+        // Mesma ordem dos vértices de `positions`: (x0,y0) (x1,y0) (x1,y1) (x0,y1).
+        wets.push(
+          wetAt(tileX, tileY),
+          wetAt(tileX + 1, tileY),
+          wetAt(tileX + 1, tileY + 1),
+          wetAt(tileX, tileY + 1),
+        );
+      }
       quadCount += 1;
     }
   }
@@ -73,6 +125,9 @@ export function buildLayerGeometry(tilemap: Tilemap, chunk: Chunk, threshold: nu
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  if (options?.shoreWetness) {
+    geometry.setAttribute('aWet', new THREE.Float32BufferAttribute(wets, 1));
+  }
   geometry.setIndex(indices);
   geometry.computeBoundingSphere();
   return geometry;

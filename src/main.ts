@@ -26,17 +26,17 @@ import { HandTool } from './tools/hand.ts';
 import { showToast } from './ui/toast.ts';
 import { PropMap } from './props/propmap.ts';
 import { PropPlacementController } from './props/propplacement.ts';
-import { buildPropsAtlas, invalidatePropsAtlasCache } from './render/art/propsAtlas.ts';
+import { buildPropsAtlas, invalidatePropsAtlasCache, loadPropsAtlasFromImage } from './render/art/propsAtlas.ts';
 import { PropRenderer } from './render/proprenderer.ts';
 import { PropPreviewRenderer } from './render/proppreviewrenderer.ts';
 import { getPropDefinition } from './props/catalog.ts';
 import { EntityManager } from './entities/manager.ts';
 import { EntityRenderer } from './render/entityrenderer.ts';
-import { buildEntityAtlas, invalidateEntityAtlasCache } from './render/entityAtlas.ts';
+import { buildEntityAtlas, invalidateEntityAtlasCache, loadEntityAtlasFromImage } from './render/entityAtlas.ts';
 import { computeLandBounds } from './world/landBounds.ts';
 import { TILE_SIZE } from './world/constants.ts';
 import { loadSettings } from './ui/settingsModal.ts';
-import { seedStarterIsland } from './world/seedIsland.ts';
+import { seedStarterIsland, seedStarterProps } from './world/seedIsland.ts';
 
 
 const container = document.getElementById('app');
@@ -62,25 +62,13 @@ scene.add(ocean.mesh);
 
 const tilemap = new Tilemap();
 const propMap = new PropMap();
-// public/assets/atlas/{props,entity}-atlas.png are generated-art batches that came out
-// broken (whole scene thumbnails per cell, watermarked) — see CLAUDE.md "Known gotchas"
-// and sprints/SPRINT_08_refit_visual.md. Using the procedural atlas until they're regenerated
-// as isolated sprites; do not swap back without visually inspecting the new PNG first.
-const propsAtlas = buildPropsAtlas();
-const entityAtlas = buildEntityAtlas();
 const coastManager = new CoastManager(tilemap);
 const terrainRenderer = new TerrainRenderer(tilemap);
-const coastRenderer = new CoastRenderer(coastManager, propsAtlas);
-const propRenderer = new PropRenderer(propMap, propsAtlas);
-const propPreviewRenderer = new PropPreviewRenderer(propsAtlas);
+let coastRenderer: CoastRenderer;
+let propRenderer: PropRenderer;
+let propPreviewRenderer: PropPreviewRenderer;
 const entityManager = new EntityManager(tilemap, coastManager);
-const entityRenderer = new EntityRenderer(entityAtlas);
-
-scene.add(coastRenderer.group);
-scene.add(terrainRenderer.group);
-scene.add(propRenderer.group);
-scene.add(entityRenderer.group);
-scene.add(propPreviewRenderer.group);
+let entityRenderer: EntityRenderer;
 
 const previewRenderer = new PreviewRenderer();
 scene.add(previewRenderer.group);
@@ -91,10 +79,16 @@ history.chainTileCallback((x, y, oldLayer, newLayer) => {
   entityManager.onTerrainChanged();
 });
 history.chainPropCallback(() => {
-  propRenderer.markDirty();
+  propRenderer?.markDirty();
 });
 
-seedStarterIsland(tilemap);
+function syncRenderersAfterMapChange(): void {
+  coastManager.invalidateAll();
+  terrainRenderer.reconcileChunks();
+  coastRenderer?.reconcileChunks(tilemap);
+  propRenderer?.markDirty();
+  entityManager.onTerrainChanged();
+}
 
 const toolSystem = new ToolSystem(history);
 const propPlacement = new PropPlacementController(tilemap, propMap, history);
@@ -123,7 +117,7 @@ uiManager = new UIManager({
     activeTab = tab;
     if (tab === 'land') {
       propPlacement.setSelectedProp(null);
-      propPreviewRenderer.update(null, 0, 0, false);
+      propPreviewRenderer?.update(null, 0, 0, false);
     }
   },
   onPropSelected: (defId) => {
@@ -137,18 +131,15 @@ uiManager = new UIManager({
   onLayerChanged: (layer) => { currentLayer = layer; },
   onUndo: () => {
     history.undo();
-    coastManager.invalidateAll();
-    propRenderer.markDirty();
+    syncRenderersAfterMapChange();
   },
   onRedo: () => {
     history.redo();
-    coastManager.invalidateAll();
-    propRenderer.markDirty();
+    syncRenderersAfterMapChange();
   },
   onClear: () => {
     history.clearMap();
-    coastManager.invalidateAll();
-    propRenderer.markDirty();
+    syncRenderersAfterMapChange();
   },
   onRadiusChanged: (radius) => {
     brush.setRadius(radius);
@@ -167,7 +158,7 @@ uiManager = new UIManager({
     entityManager.setDensityMultiplier(type, value);
   },
   onToggleFoam: (enabled) => {
-    coastRenderer.setFoamEnabled(enabled);
+    coastRenderer?.setFoamEnabled(enabled);
   },
   onToggleAutoRepopulate: (enabled) => {
     entityManager.setAutoRepopulate(enabled);
@@ -242,12 +233,10 @@ resize();
 window.addEventListener('keydown', (e) => {
   if (e.ctrlKey && (e.key === 'z' || e.key === 'Z')) {
     history.undo();
-    coastManager.invalidateAll();
-    propRenderer.markDirty();
+    syncRenderersAfterMapChange();
   } else if (e.ctrlKey && (e.key === 'y' || e.key === 'Y')) {
     history.redo();
-    coastManager.invalidateAll();
-    propRenderer.markDirty();
+    syncRenderersAfterMapChange();
   } else if (!e.ctrlKey) {
     switch (e.key.toLowerCase()) {
       case 'b': uiManager.toolbar.setTool('brush'); break;
@@ -285,20 +274,51 @@ function updateInteraction(): void {
   if (activeTab === 'land') {
     toolSystem.update(isAction, world.x, world.y, currentLayer);
     previewRenderer.update(toolSystem.getPreview(currentLayer));
-    propPreviewRenderer.update(null, 0, 0, false);
+    propPreviewRenderer?.update(null, 0, 0, false);
   } else {
     previewRenderer.update([]);
     propPlacement.update(isAction, world.x, world.y);
     const preview = propPlacement.getPreviewTile(world.x, world.y);
     const def = propPlacement.selectedDefId ? getPropDefinition(propPlacement.selectedDefId) : null;
     if (preview && def) {
-      propPreviewRenderer.update(def, preview.tileX, preview.tileY, preview.valid);
+      propPreviewRenderer?.update(def, preview.tileX, preview.tileY, preview.valid);
     } else {
-      propPreviewRenderer.update(null, 0, 0, false);
+      propPreviewRenderer?.update(null, 0, 0, false);
     }
   }
 }
 
+async function boot(): Promise<void> {
+  // Sidepanel pode ter chamado buildPropsAtlas() antes — força recarga do PNG.
+  invalidatePropsAtlasCache();
+  invalidateEntityAtlasCache();
+  await Promise.all([
+    loadPropsAtlasFromImage('/assets/atlas/props-atlas.png'),
+    loadEntityAtlasFromImage('/assets/atlas/entity-atlas.png'),
+  ]);
+  const propsAtlas = buildPropsAtlas();
+  const entityAtlas = buildEntityAtlas();
+
+  coastRenderer = new CoastRenderer(coastManager, propsAtlas);
+  propRenderer = new PropRenderer(propMap, propsAtlas);
+  propPreviewRenderer = new PropPreviewRenderer(propsAtlas);
+  entityRenderer = new EntityRenderer(entityAtlas);
+
+  scene.add(coastRenderer.group);
+  scene.add(terrainRenderer.group);
+  scene.add(propRenderer.group);
+  scene.add(entityRenderer.group);
+  scene.add(propPreviewRenderer.group);
+
+  seedStarterIsland(tilemap);
+  seedStarterProps(tilemap, propMap);
+  coastManager.invalidateAll();
+  propRenderer.markDirty();
+
+  startGameLoop();
+}
+
+function startGameLoop(): void {
 const loop = new GameLoop(
   (dt) => {
     isleCamera.update(dt, input);
@@ -321,7 +341,7 @@ const loop = new GameLoop(
     } else {
       renderer.domElement.style.cursor = uiManager.toolbar.activeCursor;
     }
-    debugOverlay.update(dt);
+    debugOverlay.update(dt, isleCamera.zoom);
   },
   () => {
     renderer.render(scene, isleCamera.three);
@@ -329,3 +349,9 @@ const loop = new GameLoop(
 );
 
 loop.start();
+}
+
+boot().catch((err) => {
+  console.error('Boot failed:', err);
+  showToast('Falha ao carregar atlas — veja o console.');
+});

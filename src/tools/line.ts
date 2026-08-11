@@ -4,7 +4,7 @@ import type { Tool, PreviewTile } from './toolsystem.ts';
 import { MIN_RADIUS_TILES, MAX_RADIUS_TILES } from './brush.ts';
 
 export class LineTool implements Tool {
-  radiusTiles = 3;
+  radiusTiles = MIN_RADIUS_TILES;
   private readonly tilemap: Tilemap;
   private startPoint: { x: number; y: number } | null = null;
   private endPoint: { x: number; y: number } | null = null;

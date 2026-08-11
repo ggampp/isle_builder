@@ -1,10 +1,10 @@
 /** Per-asset MuAPI prompts (subject only — STYLE_PREFIX added by pipeline). */
 
 export const PROP_PROMPTS = {
-  flower_red: 'small red wildflower with green stem, scatter decor',
-  flower_yellow: 'small yellow wildflower with green stem',
-  flower_white: 'small white daisy-like flower with green stem',
-  flower_pink: 'small pink flower with green stem',
+  flower_red: 'single tiny red wildflower, one green stem only, NO bushes NO ground',
+  flower_yellow: 'single tiny yellow wildflower, one green stem only, NO bushes NO ground',
+  flower_white: 'single tiny white daisy flower, one green stem only, NO bushes NO ground',
+  flower_pink: 'single tiny pink flower, one green stem only, NO bushes NO ground',
   bush_small: 'small round green bush shrub',
   bush_large: 'large round leafy green bush',
   rock_small: 'small gray beach rock pebble',
@@ -47,13 +47,13 @@ export const PROP_PROMPTS = {
   wheelbarrow: 'wooden wheelbarrow',
   hay_bale: 'rectangular hay bale',
   light_string: 'string of festive round lights horizontal',
-  well: 'stone water well with roof',
-  house_red: 'small island cottage top-down, red roof, door south',
-  house_blue: 'small island cottage top-down, blue roof, door south',
-  house_green: 'small island cottage top-down, green roof, door south',
-  house_yellow: 'small island cottage top-down, yellow roof, door south',
-  barn: 'red wooden barn building top-down, large',
-  shop: 'colorful island shop building top-down with awning, large',
+  well: 'stone water well sprite top-down with wooden roof, NO grass NO platform',
+  house_red: 'tiny cottage building sprite top-down, red roof white walls brown door, NO trees NO grass NO platform',
+  house_blue: 'tiny cottage building sprite top-down, blue roof white walls brown door, NO trees NO grass NO platform',
+  house_green: 'tiny cottage building sprite top-down, green roof white walls brown door, NO trees NO grass NO platform',
+  house_yellow: 'tiny cottage building sprite top-down, yellow roof white walls brown door, NO trees NO grass NO platform',
+  barn: 'red wooden barn building sprite top-down, large roof, NO grass NO platform',
+  shop: 'colorful shop building sprite top-down with striped awning, NO grass NO platform',
 };
 
 export const UI_PROMPTS = {
@@ -96,7 +96,7 @@ export const UI_PROMPTS = {
 };
 
 export const ENTITY_PROMPTS = {
-  villager: 'cute tiny HUMAN person villager walking, top-down pixel character with head arms legs, red shirt blue pants, MUST be a person NOT a house NOT a building NOT a cottage',
+  villager: 'ONE tiny pixel art HUMAN villager character sprite, full body top-down, red shirt blue pants brown hair, walking pose, MUST be a person NOT a house NOT a building',
   fish: 'small tropical orange fish top-down swimming',
   whale: 'blue whale top-down in water',
   shark: 'gray shark top-down',

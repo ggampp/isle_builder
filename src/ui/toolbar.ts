@@ -57,7 +57,7 @@ export class Toolbar {
     slidersPanel.style.gap = '6px';
 
     this.radiusInput = document.createElement('input');
-    const radiusRow = this.createSliderRow('size', 'SIZE', 1, 10, 3, this.radiusInput, (val) => this.callbacks.onRadiusChanged(val));
+    const radiusRow = this.createSliderRow('size', 'SIZE', 10, 30, 10, this.radiusInput, (val) => this.callbacks.onRadiusChanged(val));
 
     this.spaceInput = document.createElement('input');
     const spaceRow = this.createSliderRow('space', 'SPACE', 1, 10, 1, this.spaceInput, (val) => this.callbacks.onSpaceChanged(val));

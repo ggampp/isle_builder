@@ -7,10 +7,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export const ROOT = path.resolve(__dirname, '..');
 
 export const STYLE_PREFIX =
-  'Cute Stardew Valley island builder game art. Top-down 3/4 pixel art style. ' +
-  'Saturated cheerful palette: grass #5fa851, sand #d9c789, wood #a0724a, dark outline #2a1810. ' +
-  'Light from top-left. Single object centered on plain white background. ' +
-  'NO text, NO watermark, crisp game sprite. ';
+  'Cute Stardew Valley island builder pixel art. Top-down orthographic game sprite. ' +
+  'ONE isolated object only, centered on plain white background. ' +
+  'NO island platform, NO grass patch, NO dirt circle, NO water, NO scene, NO multiple objects, ' +
+  'NO text, NO watermark, NO logo. Dark outline #2a1810, light from top-left. ';
 
 export function loadEnv() {
   const envPath = path.join(ROOT, '.env');

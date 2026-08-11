@@ -5,6 +5,10 @@ export interface PlacedProp {
   defId: string;
   tileX: number;
   tileY: number;
+  /** Multiplicador visual do tamanho do sprite (1 = padrão). Não afeta o footprint. */
+  scale?: number;
+  /** Espelha o sprite horizontalmente — variação visual barata para vegetação/decor. */
+  flip?: boolean;
 }
 
 export interface PropChange {
