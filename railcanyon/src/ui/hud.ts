@@ -6,6 +6,7 @@ import type { BuildingKind } from '../world/buildings.ts';
 import { TOWNS } from '../world/towns.ts';
 import type { EconomySnapshot } from '../game/economy.ts';
 import type { Contract } from '../game/contracts.ts';
+import { trackIconUrl, buildingIconUrl, toolIconUrl } from './buildIcons.ts';
 import './styles.css';
 
 export type ToolKind = 'dynamite' | 'siding';
@@ -100,13 +101,15 @@ export class Hud {
   private buildPalette(): void {
     const grid = this.query('#build .grid');
     const addItem = (
-      key: string, icon: string, price: number, label: string, perk: string,
+      key: string, iconUrl: string, price: number, label: string, perk: string,
       select: () => Selection,
     ): void => {
       const el = document.createElement('button');
       el.className = 'build-item clickable';
       el.dataset.key = key;
-      el.innerHTML = `<span class="glyph">${icon}</span>${price > 0 ? `<span class="price">${price}</span>` : ''}`;
+      el.innerHTML =
+        `<img class="glyph" src="${iconUrl}" alt="" draggable="false" width="28" height="28" />` +
+        `${price > 0 ? `<span class="price">${price}</span>` : ''}`;
       el.addEventListener('mouseenter', () => {
         this.hintEl.innerHTML = `<b>${label}</b>${price > 0 ? ` — ${price} moedas` : ''}<br><span class="perk">${perk}</span>`;
       });
@@ -116,19 +119,19 @@ export class Hud {
 
     for (const kind of PIECE_KINDS) {
       const spec = PIECE_SPECS[kind];
-      addItem(`track:${kind}`, spec.icon, spec.cost, spec.label,
+      addItem(`track:${kind}`, trackIconUrl(kind), spec.cost, spec.label,
         'Estende a linha a partir da ponta brilhante',
         () => ({ type: 'track', kind }));
     }
-    addItem('tool:siding', '🔀', 0, 'Agulha de desvio',
+    addItem('tool:siding', toolIconUrl('siding'), 0, 'Agulha de desvio',
       'Clique num trecho já construído para nascer um ramal ali',
       () => ({ type: 'tool', kind: 'siding' }));
     for (const kind of BUILD_ORDER) {
       const spec = BUILDING_SPECS[kind];
-      addItem(`building:${kind}`, spec.icon, spec.cost, spec.label, spec.perk,
+      addItem(`building:${kind}`, buildingIconUrl(kind), spec.cost, spec.label, spec.perk,
         () => ({ type: 'building', kind }));
     }
-    addItem('tool:dynamite', '💣', 0, 'Dinamite',
+    addItem('tool:dynamite', toolIconUrl('dynamite'), 0, 'Dinamite',
       'Explode as pedras do caminho ou desmonta algo que você construiu',
       () => ({ type: 'tool', kind: 'dynamite' }));
     void BUILDING_KINDS;

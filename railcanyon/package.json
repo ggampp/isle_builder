@@ -7,13 +7,18 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "bake:watertower": "node scripts/bake_watertower_glb.mjs",
+    "bake:houses": "node scripts/bake_houses_glb.mjs",
+    "bake:props": "node scripts/bake_props_glb.mjs",
+    "bake:models": "npm run bake:watertower && npm run bake:houses && npm run bake:props"
   },
   "dependencies": {
     "three": "^0.180.0"
   },
   "devDependencies": {
     "@types/three": "^0.180.0",
+    "happy-dom": "^20.11.2",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "vitest": "^3.2.6"

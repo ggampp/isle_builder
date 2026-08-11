@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { cloneBuildingModel } from '../render/modelLoader.ts';
 
 export const BUILDING_KINDS = [
   'house', 'cottage', 'manor', 'cabin', 'watertower', 'windmill', 'shed', 'lamp', 'bench',
@@ -58,8 +59,11 @@ function roof(w: number, h: number, d: number, color: string, y: number): THREE.
 const WALL_COLORS = ['#f0e2c4', '#e6d3ae', '#dcc39c'];
 const ROOF_COLORS = ['#3f6dc0', '#b5432f', '#4a7a44', '#8a5a34'];
 
-/** Grupo procedural da construção; `userData.spin` marca partes animadas. */
+/** Grupo da construção (GLB pré-carregado se houver, senão procedural). `userData.spin` marca partes animadas. */
 export function createBuilding(kind: BuildingKind, variant = 0): THREE.Group {
+  const fromAsset = cloneBuildingModel(kind);
+  if (fromAsset) return fromAsset;
+
   const g = new THREE.Group();
   const wall = WALL_COLORS[variant % WALL_COLORS.length];
   const tile = ROOF_COLORS[variant % ROOF_COLORS.length];

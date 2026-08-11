@@ -85,10 +85,14 @@
 #build .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
 .build-item { position: relative; aspect-ratio: 1; border-radius: 9px;
   background: #fdf6e4; border: 2px solid #e2cfa8;
-  display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+  overflow: hidden; padding: 2px; }
 .build-item:hover { border-color: var(--blue); }
 .build-item.active { border-color: #f0a72c; background: #fff3d4;
   box-shadow: 0 0 0 2px rgba(240, 167, 44, 0.45); }
+.build-item .glyph { width: 28px; height: 28px; object-fit: contain;
+  image-rendering: auto; border-radius: 5px; pointer-events: none;
+  box-shadow: 0 1px 0 rgba(90, 60, 30, 0.15); }
 .build-item .price { position: absolute; top: -7px; left: -4px;
   background: #4a3a26; color: #ffd76a; font-size: 8.5px; font-weight: 800;
   padding: 1.5px 4px; border-radius: 6px; }
