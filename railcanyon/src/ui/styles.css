@@ -1,0 +1,197 @@
+:root {
+  --card: #f6ead2;
+  --card-border: #ffffff;
+  --ink: #5b4a33;
+  --ink-strong: #3e3020;
+  --blue: #3b74d8;
+  --shadow: 0 3px 0 rgba(90, 60, 30, 0.25), 0 8px 18px rgba(90, 60, 30, 0.18);
+  font-family: 'Trebuchet MS', 'Segoe UI', Verdana, sans-serif;
+}
+
+#hud { position: fixed; inset: 0; pointer-events: none; user-select: none; }
+#hud .clickable, #hud button { pointer-events: auto; cursor: pointer; }
+
+.card {
+  background: var(--card);
+  border: 2.5px solid var(--card-border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  color: var(--ink);
+}
+
+/* ── Topo esquerdo: título ─────────────────────────────── */
+#title-chip {
+  position: absolute; top: 12px; left: 12px;
+  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(#4a83e8, #2a55a8);
+  border: 2.5px solid #fff; border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 9px 18px 9px 11px;
+  color: #fff; font-size: 20px; font-weight: 700;
+}
+#title-chip .logo {
+  width: 32px; height: 32px; border-radius: 8px; background: #f6ead2;
+  display: flex; align-items: center; justify-content: center; font-size: 19px;
+}
+
+/* ── Topo centro: economia ─────────────────────────────── */
+#stats { position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 12px; }
+.stat { display: flex; align-items: center; gap: 9px; padding: 8px 15px; }
+.stat .icon { font-size: 21px; }
+.stat .label { font-size: 11px; font-weight: 700; opacity: 0.75; }
+.stat .value { font-size: 19px; font-weight: 800; color: var(--ink-strong); line-height: 1.05; }
+.stat .bar { position: relative; width: 104px; height: 13px; border-radius: 7px;
+  background: #d9c6a2; overflow: hidden; margin-top: 3px; }
+.stat .bar > div { height: 100%; border-radius: 7px;
+  background: linear-gradient(#79c96f, #52a848); transition: width 0.3s; }
+.stat .bar-text { position: absolute; inset: 0; font-size: 9.5px; font-weight: 800;
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35); }
+.stat .level-badge { width: 30px; height: 34px; border-radius: 8px;
+  background: linear-gradient(#4a83e8, #2a55a8); color: #fff; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; font-size: 17px;
+  border: 2px solid #fff; }
+
+/* ── Topo direito: botões de sistema ───────────────────── */
+#sysbtns { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; }
+.sysbtn { width: 42px; height: 42px; border-radius: 50%;
+  border: 2.5px solid #fff; background: linear-gradient(#fdf4dd, #ecd9b0);
+  box-shadow: var(--shadow); font-size: 19px;
+  display: flex; align-items: center; justify-content: center; }
+
+/* ── Card Objective ────────────────────────────────────── */
+#objective { position: absolute; top: 72px; left: 20px; width: 200px; padding: 13px; }
+#objective .tab { position: absolute; top: -13px; left: 18px;
+  background: #4a3a26; color: #f2e2c0; font-size: 12px; font-weight: 700;
+  border-radius: 8px; padding: 4px 12px; }
+#objective .body { display: flex; gap: 9px; font-size: 12.5px; line-height: 1.35;
+  font-weight: 600; margin-top: 4px; }
+#objective .body .icon { font-size: 21px; }
+#objective .progress { height: 13px; background: #d9c6a2; border-radius: 8px;
+  margin-top: 10px; overflow: hidden; }
+#objective .progress > div { height: 100%; width: 0;
+  background: linear-gradient(#79c96f, #52a848); border-radius: 8px; transition: width 0.4s; }
+#objective .footer { display: flex; justify-content: space-between;
+  font-size: 11.5px; margin-top: 7px; opacity: 0.85; font-weight: 700; }
+
+/* ── Painel Construir ──────────────────────────────────── */
+/* scrollbar-gutter evita que a barra de rolagem cubra a última coluna de itens. */
+#build { position: absolute; top: 248px; left: 20px; width: 208px; padding: 10px;
+  max-height: calc(100vh - 320px); overflow-y: auto; scrollbar-gutter: stable; }
+#build .header { background: linear-gradient(#4a83e8, #2a55a8); color: #fff;
+  border: 2px solid #fff; margin: -3px 2px 9px; border-radius: 10px;
+  text-align: center; font-weight: 800; font-size: 15px; padding: 5px 0; }
+#build .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.build-item { position: relative; aspect-ratio: 1; border-radius: 9px;
+  background: #fdf6e4; border: 2px solid #e2cfa8;
+  display: flex; align-items: center; justify-content: center; font-size: 16px; }
+.build-item:hover { border-color: var(--blue); }
+.build-item.active { border-color: #f0a72c; background: #fff3d4;
+  box-shadow: 0 0 0 2px rgba(240, 167, 44, 0.45); }
+.build-item .price { position: absolute; top: -7px; left: -4px;
+  background: #4a3a26; color: #ffd76a; font-size: 8.5px; font-weight: 800;
+  padding: 1.5px 4px; border-radius: 6px; }
+#build .hint { font-size: 10.5px; margin-top: 8px; line-height: 1.3;
+  font-weight: 600; opacity: 0.9; min-height: 34px; }
+#build .hint .perk { opacity: 0.8; }
+.wide-btn { width: 100%; border: 2px solid #e2cfa8; background: #fdf6e4;
+  color: var(--ink); border-radius: 9px; font-size: 11.5px; font-weight: 700;
+  padding: 6px 0; margin-top: 5px; }
+.wide-btn:hover { border-color: var(--blue); }
+#btn-line { background: #f2e2c0; }
+
+/* ── Painel do trem ────────────────────────────────────── */
+#train-panel { position: absolute; top: 72px; right: 12px; width: 222px; padding: 10px; }
+#train-panel .header { position: relative; background: linear-gradient(#4a83e8, #2a55a8);
+  color: #fff; border: 2px solid #fff; margin: -2px 0 8px; border-radius: 10px;
+  text-align: center; font-weight: 800; font-size: 15px; padding: 6px 0; }
+#train-panel .header button { position: absolute; right: 6px; top: 4px;
+  background: rgba(255, 255, 255, 0.22); border: none; color: #fff;
+  border-radius: 7px; font-size: 13px; font-weight: 800; padding: 2px 8px;
+  display: none; }
+#train-panel .portrait { background: #fdf6e4; border: 2px solid #e2cfa8;
+  border-radius: 10px; height: 58px; display: flex; align-items: center;
+  justify-content: center; font-size: 27px; margin-bottom: 7px; }
+#train-panel .row { display: flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 700; padding: 3px 2px; }
+#train-panel .row .name { flex: 0 0 62px; }
+#train-panel .row .bar { flex: 1; height: 9px; background: #d9c6a2;
+  border-radius: 6px; overflow: hidden; }
+#train-panel .row .bar > div { height: 100%; border-radius: 6px; transition: width 0.3s; }
+#train-panel .row .val { flex: 0 0 auto; font-size: 11.5px; color: var(--ink-strong); }
+#train-panel .route { background: #fdf6e4; border: 2px solid #e2cfa8;
+  border-radius: 9px; font-size: 11.5px; font-weight: 700; padding: 6px 9px; margin-top: 7px; }
+#train-panel .status { background: #dff0d2; border: 2px solid #bcd9a8;
+  border-radius: 9px; font-size: 11.5px; font-weight: 700; padding: 6px 9px;
+  margin-top: 6px; color: #3e6b2f; }
+#train-panel .actions { display: flex; gap: 7px; margin-top: 8px; }
+#train-panel .actions button { flex: 1; border: 2px solid #fff; border-radius: 10px;
+  font-weight: 800; font-size: 11.5px; color: #fff; padding: 6px 0; line-height: 1.3;
+  box-shadow: 0 2px 0 rgba(90, 60, 30, 0.25); }
+#train-panel .actions .wagon { background: linear-gradient(#79c96f, #52a848); }
+#train-panel .actions .repair { background: linear-gradient(#4a83e8, #2a55a8); }
+
+/* ── Painel modal (Trens/Rede/Contratos/Loja) ──────────── */
+#panel { position: absolute; bottom: 104px; left: 50%; transform: translateX(-50%);
+  width: 460px; max-height: 320px; overflow-y: auto; padding: 12px 14px; display: none; }
+#panel .panel-head { display: flex; justify-content: space-between; align-items: center;
+  font-size: 16px; color: var(--ink-strong); margin-bottom: 8px; }
+#panel .panel-head button { background: none; border: none; font-size: 15px;
+  color: var(--ink); }
+#panel h4 { margin: 10px 0 6px; font-size: 12px; opacity: 0.7; }
+#panel .empty { font-size: 11.5px; opacity: 0.75; line-height: 1.4; margin: 8px 0 2px; }
+.contract { background: #fdf6e4; border: 2px solid #e2cfa8; border-radius: 10px;
+  padding: 8px 10px; margin-bottom: 7px; font-size: 12px; font-weight: 700; }
+.contract.active { border-color: #bcd9a8; background: #eff7e6; }
+.contract .head { display: flex; justify-content: space-between; gap: 8px; }
+.contract .timer { color: #a8562f; }
+.contract .bar { height: 8px; background: #d9c6a2; border-radius: 5px;
+  overflow: hidden; margin: 6px 0; }
+.contract .bar > div { height: 100%; background: linear-gradient(#79c96f, #52a848); }
+.contract .foot { display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; opacity: 0.9; margin-top: 4px; }
+.contract .accept { background: linear-gradient(#79c96f, #47983d); color: #fff;
+  border: 2px solid #fff; border-radius: 9px; font-weight: 800; font-size: 11px;
+  padding: 5px 10px; }
+.row-town { display: flex; justify-content: space-between; gap: 10px;
+  font-size: 12px; font-weight: 700; padding: 6px 8px; border-radius: 8px;
+  background: #fdf6e4; border: 2px solid #e2cfa8; margin-bottom: 6px; }
+
+/* ── Nav inferior ──────────────────────────────────────── */
+#nav { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 12px; }
+.navbtn { position: relative; width: 68px; border-radius: 13px; border: 2.5px solid #fff;
+  box-shadow: var(--shadow); color: #fff; font-weight: 800; font-size: 11.5px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 8px 0 7px; }
+.navbtn.active { outline: 3px solid rgba(240, 167, 44, 0.9); }
+.navbtn .icon { font-size: 20px; }
+.navbtn .badge { position: absolute; top: -6px; right: -6px; min-width: 19px; height: 19px;
+  border-radius: 10px; background: #e2542f; border: 2px solid #fff; color: #fff;
+  font-size: 10px; display: none; align-items: center; justify-content: center; }
+.navbtn.trains { background: linear-gradient(#4a83e8, #2a55a8); }
+.navbtn.network { background: linear-gradient(#fdf4dd, #ecd9b0); color: var(--ink-strong); }
+.navbtn.contracts { background: linear-gradient(#79c96f, #47983d); }
+.navbtn.shop { background: linear-gradient(#ab7de4, #8352c4); }
+
+/* ── Minimapa, câmera e dicas ──────────────────────────── */
+#minimap { position: absolute; bottom: 14px; right: 12px; padding: 7px; }
+#minimap canvas { display: block; border-radius: 9px; }
+#btn-follow { position: absolute; bottom: 20px; right: 196px; padding: 9px 15px;
+  font-weight: 800; font-size: 13px; }
+#hint { position: absolute; bottom: 18px; left: 20px; max-width: 400px;
+  background: rgba(60, 44, 26, 0.75); color: #f2e6cc; font-size: 11px;
+  font-weight: 600; border-radius: 9px; padding: 5px 10px; line-height: 1.4; }
+
+/* ── Toasts ────────────────────────────────────────────── */
+#toasts { position: absolute; top: 84px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.toast { background: var(--card); border: 2px solid #fff; border-radius: 11px;
+  box-shadow: var(--shadow); color: var(--ink-strong); font-size: 13px;
+  font-weight: 700; padding: 9px 18px; animation: toast-in 0.25s ease-out;
+  transition: opacity 0.4s; }
+@keyframes toast-in { from { transform: translateY(-8px); opacity: 0; } }
+
+button { font-family: inherit; }
+button:active { transform: translateY(1px); }
