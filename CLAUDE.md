@@ -2,26 +2,39 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Current State
+## Layout do repositório (mudou em 2026-08-11)
 
-> **Segundo jogo no repo (2026-08-11):** `railcanyon/` contém o **Canyon Rails**,
-> recriação original do builder de ferrovias 3D low-poly do vídeo
+Este repositório abriga **dois jogos** e uma página de seleção. A raiz não é mais
+uma app: cada jogo tem `package.json`, `node_modules` e testes próprios, então
+**sempre rode `npm ...` de dentro do diretório do jogo**.
+
+```
+landing/       página de seleção (HTML+CSS estáticos, sem build)
+islebuilder/   Isle Builder  — o jogo descrito no resto deste arquivo
+railcanyon/    Canyon Rails  — builder de ferrovias 3D low-poly
+```
+
+> **Canyon Rails** (`railcanyon/`) é a recriação original do jogo do vídeo
 > https://x.com/DilumSanjaya/status/2086858760753201622 (baixado como
-> `game_video.mp4` — o vídeo atual na raiz é ESTE, não mais o de ilhas). É uma
-> app Vite própria (rodar `npm install`/`npm run dev` dentro de `railcanyon/`),
-> com plano em `railcanyon/GAME_PLAN.md` — **S01 a S06 concluídas: o jogo está
-> completo e jogável** (assentar trilhos, cidades, trem operacional, construções,
-> economia com contratos, desvios com locomotiva própria, dinamite, áudio, save).
-> `.github/workflows/deploy.yml` publica os dois jogos no GitHub Pages.
-> O restante deste arquivo descreve o Isle Builder (raiz).
+> `game_video.mp4` na raiz — o vídeo atual é ESTE, não mais o de ilhas), com plano
+> em `railcanyon/GAME_PLAN.md`: **S01 a S06 concluídas, jogo completo e jogável**
+> (assentar trilhos, cidades, trem operacional, construções, economia com
+> contratos, desvios com locomotiva própria, dinamite, áudio, save).
 >
-> Gotcha que custou tempo lá (vale para os dois jogos): se `update()` do loop
-> lançar uma exceção, o `requestAnimationFrame` não é reagendado e **o jogo
-> congela sem erro visível** — a cena continua desenhada e a página parece viva.
-> Para diagnosticar: comparar um valor da HUD ao longo do tempo e armar
+> `.github/workflows/deploy.yml` publica tudo no GitHub Pages: `/` (seleção),
+> `/isle-builder/` e `/canyon-rails/`. Como os jogos ficam em subdiretórios,
+> **nenhum caminho de asset pode ser absoluto** — use `import.meta.env.BASE_URL`
+> (um `/assets/logo.png` fixo quebrou os ícones do Isle Builder no deploy).
+>
+> Gotcha que custou tempo (vale para os dois jogos): se `update()` do loop lançar
+> uma exceção, o `requestAnimationFrame` não é reagendado e **o jogo congela sem
+> erro visível** — a cena continua desenhada e a página parece viva. Para
+> diagnosticar: comparar um valor da HUD ao longo do tempo e armar
 > `window.onerror` logo depois de abrir a página.
 
-This project recreates the "Isle Builder" game shown in `game_video.mp4` — a relaxing 2D top-down pixel-art island-painting sandbox that runs in the browser. **Sprints 01–07 are complete** (foundation through premium UI); see `sprints/ANDAMENTO.md`. **Sprint 08 (visual refit) is next**, inserted ahead of persistence/audio/release (now Sprint 09) and progression (now Sprint 10) — the game is playable but visually far from `game_video.mp4` (flat/procedural terrain+ocean, and the generated props/entity atlases are actively broken, see gotcha below). UI icons/logo are **procedural placeholders** in `src/ui/uiIcons.ts` until AI art per `assets/ART_PLAN.md`. Sprint 04-06 validation fixed 3 bugs — see `AIMemory/handoffs/2026-07-02-validacao-sprints-04-06.md`.
+## Current State (Isle Builder)
+
+All paths in the rest of this file are relative to `islebuilder/`. This game is a relaxing 2D top-down pixel-art island-painting sandbox that runs in the browser (its own reference video is no longer the one in the repo root). **Sprints 01–07 are complete** (foundation through premium UI); see `sprints/ANDAMENTO.md`. **Sprint 08 (visual refit) is next**, inserted ahead of persistence/audio/release (now Sprint 09) and progression (now Sprint 10) — the game is playable but visually far from `game_video.mp4` (flat/procedural terrain+ocean, and the generated props/entity atlases are actively broken, see gotcha below). UI icons/logo are **procedural placeholders** in `src/ui/uiIcons.ts` until AI art per `assets/ART_PLAN.md`. Sprint 04-06 validation fixed 3 bugs — see `AIMemory/handoffs/2026-07-02-validacao-sprints-04-06.md`.
 
 - `GAME_PLAN.md` — detailed video analysis (all observed features) and the phased construction plan (stack, architecture, acceptance criteria per phase)
 - `sprints/` — the plan broken into 10 executable sprints, one file each with deliverable, scope, tasks and acceptance criteria; `sprints/ANDAMENTO.md` is the progress dashboard (update it when starting/finishing a sprint)
