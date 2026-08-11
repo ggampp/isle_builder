@@ -1,7 +1,8 @@
 name: Deploy games to GitHub Pages
 
-# Publica os dois jogos do repositório:
-#   /                → Isle Builder (raiz)
+# Publica a sala de jogos e os dois jogos do repositório:
+#   /                → página de seleção (landing/)
+#   /isle-builder/   → Isle Builder (islebuilder/)
 #   /canyon-rails/   → Canyon Rails (railcanyon/)
 # Requer Pages habilitado em Settings → Pages → Source: GitHub Actions.
 
@@ -30,12 +31,14 @@ jobs:
           node-version: 22
 
       - name: Instalar dependências (Isle Builder)
+        working-directory: islebuilder
         run: npm ci
 
       - name: Testes e build (Isle Builder)
+        working-directory: islebuilder
         run: |
           npm run test
-          npx vite build --base="/${GITHUB_REPOSITORY#*/}/"
+          npx vite build --base="/${GITHUB_REPOSITORY#*/}/isle-builder/"
 
       - name: Instalar dependências (Canyon Rails)
         working-directory: railcanyon
@@ -48,14 +51,17 @@ jobs:
           npx tsc --noEmit
           npx vite build --base="/${GITHUB_REPOSITORY#*/}/canyon-rails/"
 
-      - name: Juntar os dois builds
+      - name: Montar o site (landing + os dois jogos)
         run: |
-          mkdir -p dist/canyon-rails
-          cp -r railcanyon/dist/. dist/canyon-rails/
+          rm -rf site
+          mkdir -p site/isle-builder site/canyon-rails
+          cp -r landing/. site/
+          cp -r islebuilder/dist/. site/isle-builder/
+          cp -r railcanyon/dist/. site/canyon-rails/
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
 
   deploy:
     needs: build

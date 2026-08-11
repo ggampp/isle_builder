@@ -12,7 +12,7 @@ dist
 dist-ssr
 *.local
 .env
-assets/generated/raw/
+islebuilder/assets/generated/raw/
 terminals/
 
 # Editor directories and files
@@ -28,3 +28,6 @@ terminals/
 
 # Video de referencia (grande, nao deve ser commitado)
 game_video.mp4
+
+# Site montado pelo deploy (landing + os dois jogos)
+site/
