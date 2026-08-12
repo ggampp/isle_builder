@@ -12,7 +12,16 @@ uma app: cada jogo tem `package.json`, `node_modules` e testes próprios, então
 landing/       página de seleção (HTML+CSS estáticos, sem build)
 islebuilder/   Isle Builder  — o jogo descrito no resto deste arquivo
 railcanyon/    Canyon Rails  — builder de ferrovias 3D low-poly
+prisma/        Prisma        — puzzle diário de luz e espelhos (canvas 2D)
 ```
+
+> **Prisma** (`prisma/`) é a recriação original do puzzle de luz do post
+> https://x.com/CoffeeGamesDev/status/2087349753046573373, com regras próprias
+> documentadas em `prisma/GAME_PLAN.md`: espelhos desviam 90° e **feixes que se
+> cruzam seguem misturados** (as três primárias geram laranja/roxo/verde/branco).
+> O gerador constrói a solução antes de escondê-la, então todo puzzle é
+> resolvível; a semente vem da data, então o desafio do dia é igual para todos.
+> Não usa Three.js — é canvas 2D e não tem dependências de runtime.
 
 > **Canyon Rails** (`railcanyon/`) é a recriação original do jogo do vídeo
 > https://x.com/DilumSanjaya/status/2086858760753201622 (baixado como

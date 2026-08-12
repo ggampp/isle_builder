@@ -1,0 +1,142 @@
+/* Prisma — layout claro em volta de um tabuleiro escuro. */
+
+:root {
+  --ink: #1d2129;
+  --muted: #767f8f;
+  --line: #e2e5ea;
+  --page: #f7f8fa;
+  --accent: #f0b429;
+  --font: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font);
+}
+
+#app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 20px 60px;
+}
+
+/* ── Cabeçalho ──────────────────────────────────────────── */
+
+.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; }
+
+h1 { margin: 4px 0 2px; font-size: clamp(2rem, 6vw, 2.9rem); letter-spacing: -0.02em; }
+
+.subtitle {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.subtitle button {
+  background: none; border: none; padding: 0;
+  font: inherit; color: #2f7fe0; text-decoration: underline;
+  cursor: pointer; letter-spacing: inherit;
+}
+
+.stats { display: flex; gap: 26px; text-align: right; }
+.stat .label {
+  font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.12em;
+  color: var(--muted); text-transform: uppercase;
+}
+.stat .value { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+
+/* Fita de cores sob o cabeçalho. */
+.ribbon { display: flex; align-items: center; gap: 10px; margin: 18px 0 22px; }
+.ribbon .rail { flex: 1; height: 10px; position: relative; }
+.ribbon .rail span {
+  position: absolute; left: 0; right: 0; height: 2px; border-radius: 2px;
+}
+
+/* ── Tabuleiro ──────────────────────────────────────────── */
+
+.board-wrap { display: flex; justify-content: center; }
+canvas { display: block; touch-action: manipulation; }
+
+.actions { display: flex; gap: 12px; justify-content: center; margin-top: 22px; flex-wrap: wrap; }
+button.action {
+  padding: 12px 22px; border-radius: 10px; font-size: 0.98rem; font-weight: 700;
+  font-family: var(--font); cursor: pointer; border: 1.5px solid var(--line);
+  background: #fff; color: var(--ink);
+}
+button.action:hover { border-color: #c9ced8; }
+button.action.primary { background: var(--accent); border-color: #dda31d; }
+button.action.primary:hover { background: #f7c445; }
+button.action:disabled { opacity: 0.45; cursor: default; }
+
+.difficulties { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
+.difficulties button {
+  padding: 7px 15px; border-radius: 999px; border: 1.5px solid var(--line);
+  background: #fff; font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.08em;
+  text-transform: uppercase; cursor: pointer; color: var(--muted);
+}
+.difficulties button.active { border-color: var(--ink); color: var(--ink); font-weight: 700; }
+
+/* ── Legenda dos alvos ──────────────────────────────────── */
+
+.legend {
+  display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+  margin: 20px 0 0; padding: 0; list-style: none;
+}
+.legend li {
+  display: flex; align-items: center; gap: 8px;
+  padding: 7px 13px; border: 1.5px solid var(--line); border-radius: 999px;
+  background: #fff; font-size: 0.82rem; font-weight: 600;
+}
+.legend .dot { width: 13px; height: 13px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1.5px currentColor; }
+.legend .done { color: #2f9e52; }
+
+.message {
+  margin: 18px auto 0; max-width: 460px; text-align: center;
+  font-size: 0.95rem; line-height: 1.55; color: var(--muted); min-height: 3em;
+}
+.message.win { color: #2f9e52; font-weight: 700; }
+.message b { color: var(--ink); }
+
+/* ── Modal de ajuda ─────────────────────────────────────── */
+
+.overlay {
+  position: fixed; inset: 0; background: rgba(20, 24, 32, 0.55);
+  display: grid; place-items: center; padding: 20px; z-index: 20;
+}
+.overlay[hidden] { display: none; }
+.sheet {
+  background: #fff; border-radius: 16px; padding: 26px 28px 22px;
+  max-width: 520px; width: 100%; max-height: 84vh; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(20, 24, 32, 0.3);
+}
+.sheet h2 { margin: 0 0 14px; font-size: 1.4rem; }
+.sheet h3 { margin: 18px 0 6px; font-size: 0.95rem; }
+.sheet p, .sheet li { font-size: 0.92rem; line-height: 1.6; color: #414957; }
+.sheet ul { margin: 6px 0; padding-left: 20px; }
+.sheet .mixes { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 0; padding: 0; list-style: none; }
+.sheet .mixes li {
+  display: flex; align-items: center; gap: 7px; padding: 6px 11px;
+  border: 1.5px solid var(--line); border-radius: 999px; font-size: 0.82rem;
+}
+.sheet .swatch { width: 12px; height: 12px; border-radius: 3px; }
+.sheet .close { margin-top: 20px; width: 100%; }
+
+footer {
+  margin-top: 42px; padding-top: 18px; border-top: 1px dashed var(--line);
+  font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+  display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+footer a { color: inherit; }
+
+@media (max-width: 540px) {
+  .top { flex-direction: column; }
+  .stats { text-align: left; }
+}
