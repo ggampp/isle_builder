@@ -1,9 +1,10 @@
 name: Deploy games to GitHub Pages
 
-# Publica a sala de jogos e os dois jogos do repositório:
+# Publica a sala de jogos e os três jogos do repositório:
 #   /                → página de seleção (landing/)
 #   /isle-builder/   → Isle Builder (islebuilder/)
 #   /canyon-rails/   → Canyon Rails (railcanyon/)
+#   /prisma/         → Prisma (prisma/)
 # Requer Pages habilitado em Settings → Pages → Source: GitHub Actions.
 
 on:
@@ -51,13 +52,24 @@ jobs:
           npx tsc --noEmit
           npx vite build --base="/${GITHUB_REPOSITORY#*/}/canyon-rails/"
 
-      - name: Montar o site (landing + os dois jogos)
+      - name: Instalar dependências (Prisma)
+        working-directory: prisma
+        run: npm ci
+
+      - name: Testes e build (Prisma)
+        working-directory: prisma
+        run: |
+          npm run test
+          npx vite build --base="/${GITHUB_REPOSITORY#*/}/prisma/"
+
+      - name: Montar o site (landing + os três jogos)
         run: |
           rm -rf site
-          mkdir -p site/isle-builder site/canyon-rails
+          mkdir -p site/isle-builder site/canyon-rails site/prisma
           cp -r landing/. site/
           cp -r islebuilder/dist/. site/isle-builder/
           cp -r railcanyon/dist/. site/canyon-rails/
+          cp -r prisma/dist/. site/prisma/
 
       - uses: actions/upload-pages-artifact@v3
         with:

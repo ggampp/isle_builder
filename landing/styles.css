@@ -224,6 +224,7 @@ body {
 .cabinet:hover { transform: translate(-4px, -6px); box-shadow: 18px 20px 0 var(--ink); }
 .cabinet.isle { --accent: var(--sea); --accent-2: var(--leaf); }
 .cabinet.canyon { --accent: var(--clay); --accent-2: var(--lagoon); }
+.cabinet.prisma { --accent: var(--grape); --accent-2: var(--sea); }
 
 /* Halo colorido girando atrás do gabinete. */
 .cabinet-glow {
@@ -266,7 +267,8 @@ body {
 .marquee-plate h2 {
   margin: 0;
   font-family: var(--display);
-  font-size: clamp(1.7rem, 4.6vw, 2.5rem);
+  /* Cabe em três colunas: "Canyon Rails" é o nome mais longo da prateleira. */
+  font-size: clamp(1.25rem, 3.2vw, 2.1rem);
   letter-spacing: -0.02em;
   text-transform: uppercase;
   -webkit-text-stroke: 2px var(--ink);
@@ -337,6 +339,8 @@ body {
 .isle-btn:hover { background: #96dcfa; }
 .canyon-btn { background: #ffb27a; }
 .canyon-btn:hover { background: #ffc394; }
+.prisma-btn { background: #c9a6f0; }
+.prisma-btn:hover { background: #d6b9f5; }
 
 .status {
   margin: 0.9rem 0 0;

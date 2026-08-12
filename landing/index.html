@@ -28,7 +28,7 @@
     </div>
 
     <header class="hero">
-      <p class="kicker"><span>◆</span> dois jogos · um repositório · feitos do zero <span>◆</span></p>
+      <p class="kicker"><span>◆</span> três jogos · um repositório · feitos do zero <span>◆</span></p>
       <h1 class="title">
         <span class="line-1">SALA</span>
         <span class="line-2">DE JOGOS</span>
@@ -40,7 +40,7 @@
       </p>
       <div class="badges">
         <span class="badge b1">🎨 mundos gerados em código</span>
-        <span class="badge b2">🧪 86 testes</span>
+        <span class="badge b2">🧪 122 testes</span>
         <span class="badge b3">🕹️ joga no navegador</span>
         <span class="badge b4">💾 salva no seu navegador</span>
       </div>
@@ -215,6 +215,80 @@
           <p class="status">Sprints 01–06 concluídas · jogo completo</p>
         </div>
       </article>
+      <!-- ─────────────────────────── Prisma ──────────────────────── -->
+      <article class="cabinet prisma">
+        <div class="cabinet-glow" aria-hidden="true"></div>
+        <div class="screen">
+          <svg viewBox="0 0 320 200" role="img" aria-label="Tabuleiro escuro com feixes de luz coloridos, espelhos e um alvo aceso">
+            <rect width="320" height="200" rx="10" fill="#232833" />
+            <g fill="#2e3441" stroke="#39404f">
+              <!-- grade 6x4 -->
+              <rect x="16" y="14" width="44" height="42" rx="7" /><rect x="64" y="14" width="44" height="42" rx="7" />
+              <rect x="112" y="14" width="44" height="42" rx="7" /><rect x="160" y="14" width="44" height="42" rx="7" />
+              <rect x="208" y="14" width="44" height="42" rx="7" /><rect x="256" y="14" width="44" height="42" rx="7" />
+              <rect x="16" y="60" width="44" height="42" rx="7" /><rect x="64" y="60" width="44" height="42" rx="7" />
+              <rect x="112" y="60" width="44" height="42" rx="7" /><rect x="160" y="60" width="44" height="42" rx="7" />
+              <rect x="208" y="60" width="44" height="42" rx="7" /><rect x="256" y="60" width="44" height="42" rx="7" />
+              <rect x="16" y="106" width="44" height="42" rx="7" /><rect x="64" y="106" width="44" height="42" rx="7" />
+              <rect x="112" y="106" width="44" height="42" rx="7" /><rect x="160" y="106" width="44" height="42" rx="7" />
+              <rect x="208" y="106" width="44" height="42" rx="7" /><rect x="256" y="106" width="44" height="42" rx="7" />
+              <rect x="16" y="152" width="44" height="34" rx="7" /><rect x="64" y="152" width="44" height="34" rx="7" />
+              <rect x="112" y="152" width="44" height="34" rx="7" /><rect x="160" y="152" width="44" height="34" rx="7" />
+              <rect x="208" y="152" width="44" height="34" rx="7" /><rect x="256" y="152" width="44" height="34" rx="7" />
+            </g>
+            <!-- feixe vermelho entra pela esquerda, azul desce; ao cruzar viram roxo -->
+            <g stroke-width="4" fill="none">
+              <path d="M38 81 H134" stroke="#e8544a" />
+              <path d="M134 35 V81" stroke="#3d8ee8" />
+              <path d="M134 81 H278" stroke="#a95ce0" />
+              <path d="M134 81 V169" stroke="#a95ce0" />
+            </g>
+            <!-- emissores -->
+            <g>
+              <rect x="18" y="62" width="40" height="38" rx="7" fill="#1a1f28" stroke="#e8544a" stroke-width="2.5" />
+              <path d="M32 72 l14 9 -14 9z" fill="#f2f4f8" />
+              <rect x="114" y="16" width="40" height="38" rx="7" fill="#1a1f28" stroke="#3d8ee8" stroke-width="2.5" />
+              <path d="M125 28 l9 14 9-14z" fill="#f2f4f8" transform="translate(0,4)" />
+            </g>
+            <!-- espelhos -->
+            <g stroke="#e8f4ff" stroke-width="4" stroke-linecap="round">
+              <path d="M124 91 L144 71" /><path d="M268 71 L288 91" />
+            </g>
+            <!-- alvo aceso -->
+            <g>
+              <rect x="114" y="154" width="40" height="30" rx="7" fill="rgba(169,92,224,0.22)" stroke="#a95ce0" stroke-width="3" />
+              <circle cx="134" cy="169" r="7" fill="#a95ce0" stroke="#fff" stroke-width="2" />
+            </g>
+            <!-- parede -->
+            <rect x="210" y="108" width="40" height="38" rx="7" fill="#8d94a3" />
+          </svg>
+          <div class="scanlines" aria-hidden="true"></div>
+        </div>
+
+        <div class="cabinet-body">
+          <div class="marquee-plate">
+            <h2>Prisma</h2>
+            <p class="sub">puzzle diário de luz</p>
+          </div>
+          <p class="pitch">
+            Um tabuleiro novo por dia, igual para todo mundo. Gire espelhos para
+            desviar os feixes até os alvos — e lembre que dois feixes que se
+            <b>cruzam seguem misturados</b>: é assim que se acende um alvo roxo,
+            laranja ou verde.
+          </p>
+          <ul class="chips">
+            <li>🔺 três dificuldades</li>
+            <li>🎨 mistura de cores</li>
+            <li>🧩 sempre tem solução</li>
+            <li>📆 desafio do dia</li>
+          </ul>
+          <a class="play prisma-btn" href="./prisma/">
+            <span class="play-label">Jogar Prisma</span>
+            <span class="play-arrow" aria-hidden="true">▶</span>
+          </a>
+          <p class="status">Jogo completo · puzzle diário e tabuleiros extras</p>
+        </div>
+      </article>
     </main>
 
     <section class="how">
@@ -223,7 +297,10 @@
 cd islebuilder &amp;&amp; npm install &amp;&amp; npm run dev
 
 # Canyon Rails
-cd railcanyon &amp;&amp; npm install &amp;&amp; npm run dev</code></pre>
+cd railcanyon &amp;&amp; npm install &amp;&amp; npm run dev
+
+# Prisma
+cd prisma &amp;&amp; npm install &amp;&amp; npm run dev</code></pre>
       <p>
         Cada jogo é uma aplicação Vite independente, com seus próprios testes
         (<code>npm run test</code>) e gate de tipos no build.
