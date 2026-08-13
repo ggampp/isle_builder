@@ -94,14 +94,14 @@ export type Facing = 's' | 'n' | 'e' | 'w';
 
 export class SpriteKit {
   readonly hero = {
-    s: makeSprite(heroFrame('s'), 0.78, 1.16),
-    n: makeSprite(heroFrame('n'), 0.78, 1.16),
-    e: makeSprite(heroFrame('e'), 0.78, 1.16),
-    w: makeSprite(heroFrame('w'), 0.78, 1.16),
+    s: makeSprite(heroFrame('s'), 0.95, 1.42),
+    n: makeSprite(heroFrame('n'), 0.95, 1.42),
+    e: makeSprite(heroFrame('e'), 0.95, 1.42),
+    w: makeSprite(heroFrame('w'), 0.95, 1.42),
   };
-  readonly slime = makeSprite(slimeTex('#7ad65a'), 0.72, 0.72);
-  readonly ghost = makeSprite(slimeTex('#9ae0d8'), 0.72, 0.72);
-  readonly golem = makeSprite(golemTex(), 1.05, 1.35);
+  readonly slime = makeSprite(slimeTex('#7ad65a'), 0.95, 0.95);
+  readonly ghost = makeSprite(slimeTex('#9ae0d8'), 0.95, 0.95);
+  readonly golem = makeSprite(golemTex(), 1.28, 1.62);
 
   facingFrom(dx: number, dz: number): Facing {
     if (Math.abs(dx) > Math.abs(dz)) return dx >= 0 ? 'e' : 'w';

@@ -175,7 +175,7 @@ const TEMPLATE = `
 <div class="tools">
   <button type="button" id="btn-help">Ajuda</button>
   <button type="button" id="btn-mute">Som</button>
-  <button type="button" id="btn-reset">R reinicia</button>
+  <button type="button" id="btn-reset">Reinicia</button>
 </div>
 <div id="stick" class="stick" aria-label="mover"><span class="knob"></span></div>
 <button type="button" id="cast" class="cast">✦</button>

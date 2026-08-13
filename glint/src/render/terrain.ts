@@ -12,7 +12,7 @@ const GRASS_A = new THREE.Color('#5aaa3a');
 const GRASS_B = new THREE.Color('#6fbe48');
 const SAND = new THREE.Color('#e2c48a');
 const ROCK = new THREE.Color('#8a5a3c');
-const COBBLE = new THREE.Color('#9aa3a8');
+const COBBLE = new THREE.Color('#6a8aa0');
 
 export function buildTerrain(scene: THREE.Scene): THREE.Group {
   const group = new THREE.Group();
