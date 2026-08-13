@@ -2,6 +2,7 @@ import { ALL_COLORS, colorHex, colorName, recipeOf } from '../puzzle/colors.ts';
 import { DIFFICULTIES } from '../puzzle/generate.ts';
 import type { Puzzle } from '../puzzle/grid.ts';
 import type { Simulation } from '../puzzle/simulate.ts';
+import { assetUrl } from '../render/materials.ts';
 import './styles.css';
 
 export interface HudCallbacks {
@@ -9,6 +10,7 @@ export interface HudCallbacks {
   onNewPuzzle: () => void;
   onDifficulty: (id: string) => void;
   onHelp: (open: boolean) => void;
+  onMute: (muted: boolean) => void;
 }
 
 export interface HudState {
@@ -24,11 +26,11 @@ export interface HudState {
   solved: boolean;
 }
 
-/** Painéis e textos ao redor do tabuleiro. */
 export class Hud {
   readonly canvas: HTMLCanvasElement;
   private root: HTMLElement;
   private callbacks: HudCallbacks;
+  private muted = false;
 
   constructor(mount: HTMLElement, callbacks: HudCallbacks) {
     this.callbacks = callbacks;
@@ -36,12 +38,21 @@ export class Hud {
     this.root = mount;
     this.canvas = this.query('#board') as HTMLCanvasElement;
 
+    const logo = this.query('#logo') as HTMLImageElement;
+    logo.src = assetUrl('assets/ui/logo.png');
+    logo.addEventListener('error', () => { logo.hidden = true; });
+
     this.query('#btn-clear').addEventListener('click', () => this.callbacks.onClear());
     this.query('#btn-new').addEventListener('click', () => this.callbacks.onNewPuzzle());
     this.query('#btn-help').addEventListener('click', () => this.callbacks.onHelp(true));
     this.query('#btn-help-close').addEventListener('click', () => this.callbacks.onHelp(false));
     this.query('#help').addEventListener('click', (e) => {
       if (e.target === this.query('#help')) this.callbacks.onHelp(false);
+    });
+    this.query('#btn-mute').addEventListener('click', () => {
+      this.muted = !this.muted;
+      this.query('#btn-mute').textContent = this.muted ? 'Som off' : 'Som';
+      this.callbacks.onMute(this.muted);
     });
 
     const picker = this.query('#difficulties');
@@ -53,7 +64,6 @@ export class Hud {
       picker.appendChild(button);
     }
 
-    this.renderRibbon();
     this.renderMixes();
   }
 
@@ -61,18 +71,6 @@ export class Hud {
     const el = this.root.querySelector(selector);
     if (!el) throw new Error(`elemento ausente na HUD: ${selector}`);
     return el as HTMLElement;
-  }
-
-  private renderRibbon(): void {
-    const rail = this.query('#ribbon-rail');
-    const colors = [1, 4, 2, 3];
-    colors.forEach((mask, i) => {
-      const bar = document.createElement('span');
-      bar.style.background = colorHex(mask);
-      bar.style.top = `${i * 3}px`;
-      bar.style.right = `${i * 14}px`;
-      rail.appendChild(bar);
-    });
   }
 
   private renderMixes(): void {
@@ -91,6 +89,12 @@ export class Hud {
     this.query('#help').hidden = !open;
   }
 
+  setLoading(open: boolean, label = 'Montando o ateliê óptico…'): void {
+    const el = this.query('#loading');
+    el.hidden = !open;
+    this.query('#loading-label').textContent = label;
+  }
+
   update(state: HudState, puzzle: Puzzle, sim: Simulation): void {
     this.query('#date').textContent = state.dateKey;
     this.query('#difficulty').textContent = state.difficultyLabel.toUpperCase();
@@ -98,9 +102,17 @@ export class Hud {
     this.query('#targets').textContent = `${state.targetsLit}/${state.targetsTotal}`;
     this.query('#badge-daily').textContent = state.isDaily ? 'DESAFIO DO DIA' : 'TABULEIRO EXTRA';
 
+    const mirrorFill = this.query('#meter-mirrors');
+    const targetFill = this.query('#meter-targets');
+    const mPct = state.mirrorBudget === 0 ? 0 : state.mirrorsUsed / state.mirrorBudget;
+    const tPct = state.targetsTotal === 0 ? 0 : state.targetsLit / state.targetsTotal;
+    mirrorFill.style.width = `${Math.min(1, mPct) * 100}%`;
+    targetFill.style.width = `${Math.min(1, tPct) * 100}%`;
+
     const message = this.query('#message');
     message.innerHTML = state.message;
     message.classList.toggle('win', state.solved);
+    this.root.classList.toggle('solved', state.solved);
 
     this.root.querySelectorAll<HTMLElement>('#difficulties button').forEach((el) => {
       el.classList.toggle('active', el.dataset.id === state.difficultyId);
@@ -122,40 +134,54 @@ export class Hud {
 }
 
 const TEMPLATE = `
-  <header class="top">
-    <div>
-      <h1>Prisma</h1>
-      <p class="subtitle">
-        <span id="date">—</span> · <span id="difficulty">—</span> ·
-        <button id="btn-help">como jogar</button>
-      </p>
-      <p class="subtitle" style="margin-top:6px"><span id="badge-daily">DESAFIO DO DIA</span></p>
+  <div class="stage">
+    <canvas id="board"></canvas>
+    <div class="vignette" aria-hidden="true"></div>
+  </div>
+
+  <header class="hud-top">
+    <div class="brand">
+      <img id="logo" alt="" width="52" height="52" />
+      <div>
+        <h1>Prisma</h1>
+        <p class="subtitle">
+          <span id="date">—</span> · <span id="difficulty">—</span>
+          <button type="button" id="btn-help">como jogar</button>
+        </p>
+        <p class="badge" id="badge-daily">DESAFIO DO DIA</p>
+      </div>
     </div>
-    <div class="stats">
-      <div class="stat"><div class="label">Espelhos</div><div class="value" id="mirrors">0/0</div></div>
-      <div class="stat"><div class="label">Alvos acesos</div><div class="value" id="targets">0/0</div></div>
+    <div class="meters">
+      <div class="meter">
+        <div class="meter-head"><span>Espelhos</span><b id="mirrors">0/0</b></div>
+        <div class="meter-track"><i id="meter-mirrors"></i></div>
+      </div>
+      <div class="meter">
+        <div class="meter-head"><span>Alvos</span><b id="targets">0/0</b></div>
+        <div class="meter-track"><i id="meter-targets"></i></div>
+      </div>
+      <button type="button" class="icon-btn" id="btn-mute" title="Som">Som</button>
     </div>
   </header>
 
-  <div class="ribbon"><div class="rail" id="ribbon-rail"></div></div>
-
-  <div class="board-wrap"><canvas id="board"></canvas></div>
-
   <ul class="legend" id="legend"></ul>
-  <p class="message" id="message"></p>
 
-  <div class="actions">
-    <button class="action" id="btn-clear">Limpar tabuleiro</button>
-    <button class="action primary" id="btn-new">Outro tabuleiro</button>
+  <div class="hud-bottom">
+    <p class="message" id="message"></p>
+    <div class="actions">
+      <button class="action" id="btn-clear">Limpar</button>
+      <button class="action primary" id="btn-new">Outro tabuleiro</button>
+    </div>
+    <div class="difficulties" id="difficulties"></div>
+    <p class="hint-orbit">Arraste para orbitar · clique para pôr um espelho · scroll para zoom</p>
   </div>
-  <div class="difficulties" id="difficulties"></div>
 
   <div class="overlay" id="help" hidden>
     <div class="sheet">
       <h2>Como jogar</h2>
       <p>
-        Cada emissor lança um feixe na direção da seta. Sua tarefa é levar a luz
-        até todos os alvos — e na cor exata que cada um pede.
+        Cada emissor lança um feixe na direção da lente. Leve a luz até todos os
+        alvos — na cor exata que cada um pede.
       </p>
       <h3>Espelhos</h3>
       <ul>
@@ -171,16 +197,18 @@ const TEMPLATE = `
       <ul class="mixes" id="mixes"></ul>
       <h3>Regras da casa</h3>
       <ul>
-        <li>Paredes cinzas bloqueiam a luz; emissores e alvos a absorvem.</li>
+        <li>Paredes bloqueiam a luz; emissores e alvos a absorvem.</li>
         <li>Você tem um número limitado de espelhos — o mesmo que a solução de referência usa.</li>
-        <li>Um alvo com a cor errada mostra um pontinho da cor que chegou nele.</li>
+        <li>Arraste o tabuleiro para orbitar a câmera; a roda aproxima. Clique põe ou vira o espelho.</li>
       </ul>
       <button class="action close" id="btn-help-close">Entendi</button>
     </div>
   </div>
 
-  <footer>
-    <span>Prisma · puzzle diário de luz</span>
-    <span>o tabuleiro do dia é o mesmo para todo mundo</span>
-  </footer>
+  <div class="overlay loading" id="loading">
+    <div class="sheet loading-sheet">
+      <div class="prism-spin" aria-hidden="true"></div>
+      <p id="loading-label">Montando o ateliê óptico…</p>
+    </div>
+  </div>
 `;

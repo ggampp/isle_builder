@@ -29,6 +29,8 @@ terminals/
 
 # Video de referencia (grande, nao deve ser commitado)
 game_video.mp4
+shotgun.mp4
+_scratch_frames/
 
 # Site montado pelo deploy (landing + os dois jogos)
 site/

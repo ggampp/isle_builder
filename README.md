@@ -1,6 +1,6 @@
 # Sala de Jogos
 
-Três jogos de navegador feitos do zero em TypeScript, cada um numa aplicação
+Quatro jogos de navegador feitos do zero em TypeScript, cada um numa aplicação
 Vite independente, mais uma página inicial para escolher entre eles.
 
 ```
@@ -8,6 +8,7 @@ landing/       página de seleção (HTML + CSS estáticos, sem build)
 islebuilder/   Isle Builder — sandbox de pintura de ilhas em pixel art (2D)
 railcanyon/    Canyon Rails — construtor de ferrovias num desfiladeiro (3D low-poly)
 prisma/        Prisma — puzzle diário de luz, espelhos e mistura de cores (2D)
+splinter/      Splinter — playground FPS de destruição voxel (Three.js + Rapier)
 AIMemory/      memória compartilhada entre sessões de agentes
 ```
 
@@ -19,15 +20,15 @@ Cada jogo tem suas próprias dependências e scripts:
 cd islebuilder && npm install && npm run dev    # Isle Builder
 cd railcanyon && npm install && npm run dev     # Canyon Rails
 cd prisma     && npm install && npm run dev     # Prisma
+cd splinter   && npm install && npm run dev     # Splinter
 ```
 
-Em todos: `npm run test` roda os testes (57 no Isle Builder, 42 no Canyon Rails,
-23 no Prisma) e `npm run build` roda o gate de tipos (`tsc`) antes do build de
-produção.
+Em todos: `npm run test` roda os testes e `npm run build` roda o gate de tipos
+(`tsc`) antes do build de produção.
 
 A página inicial é estática — abra `landing/index.html` no navegador ou sirva a
-pasta (`npx serve landing`). Os links dela apontam para `isle-builder/` e
-`canyon-rails/`, que só existem no site montado (veja abaixo).
+pasta (`npx serve landing`). Os links dela apontam para as pastas do site
+montado (veja abaixo).
 
 ## Publicação
 
@@ -40,6 +41,7 @@ na `main`:
 | `/isle-builder/` | Isle Builder |
 | `/canyon-rails/` | Canyon Rails |
 | `/prisma/` | Prisma |
+| `/splinter/` | Splinter |
 
 Para montar o mesmo site localmente:
 
@@ -47,11 +49,13 @@ Para montar o mesmo site localmente:
 (cd islebuilder && npx vite build --base=/isle-builder/)
 (cd railcanyon && npx vite build --base=/canyon-rails/)
 (cd prisma     && npx vite build --base=/prisma/)
-mkdir -p site/isle-builder site/canyon-rails site/prisma
+(cd splinter   && npx vite build --base=/splinter/)
+mkdir -p site/isle-builder site/canyon-rails site/prisma site/splinter
 cp -r landing/. site/
 cp -r islebuilder/dist/. site/isle-builder/
 cp -r railcanyon/dist/. site/canyon-rails/
 cp -r prisma/dist/. site/prisma/
+cp -r splinter/dist/. site/splinter/
 npx serve site
 ```
 
@@ -64,4 +68,5 @@ O deploy só funciona depois de habilitar Pages em
 - `islebuilder/GAME_PLAN.md` e `islebuilder/sprints/` — plano e sprints do Isle Builder
 - `railcanyon/GAME_PLAN.md` — plano e fases do Canyon Rails
 - `prisma/GAME_PLAN.md` — regras, gerador e arquitetura do Prisma
+- `splinter/GAME_PLAN.md` — regras, física e armas do Splinter
 - `AIMemory/handoffs/` — histórico de sessões

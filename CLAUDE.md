@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Layout do repositório (mudou em 2026-08-11)
 
-Este repositório abriga **dois jogos** e uma página de seleção. A raiz não é mais
+Este repositório abriga **quatro jogos** e uma página de seleção. A raiz não é mais
 uma app: cada jogo tem `package.json`, `node_modules` e testes próprios, então
 **sempre rode `npm ...` de dentro do diretório do jogo**.
 
@@ -13,6 +13,7 @@ landing/       página de seleção (HTML+CSS estáticos, sem build)
 islebuilder/   Isle Builder  — o jogo descrito no resto deste arquivo
 railcanyon/    Canyon Rails  — builder de ferrovias 3D low-poly
 prisma/        Prisma        — puzzle diário de luz e espelhos (canvas 2D)
+splinter/      Splinter      — playground FPS de destruição voxel (Three.js + Rapier)
 ```
 
 > **Prisma** (`prisma/`) é a recriação original do puzzle de luz do post
@@ -21,7 +22,13 @@ prisma/        Prisma        — puzzle diário de luz e espelhos (canvas 2D)
 > cruzam seguem misturados** (as três primárias geram laranja/roxo/verde/branco).
 > O gerador constrói a solução antes de escondê-la, então todo puzzle é
 > resolvível; a semente vem da data, então o desafio do dia é igual para todos.
-> Não usa Three.js — é canvas 2D e não tem dependências de runtime.
+> Render em **Three.js 3D** (ateliê óptico); a lógica em `src/puzzle/` continua
+> pura e testável. Assets: Gemini/Fal para conceitos, Fal Tripo H3.1 para GLBs.
+
+> **Splinter** (`splinter/`) é a recriação original do playground de destruição
+> voxel do post https://x.com/parazar/status/2087567094741176323, com regras
+> próprias em `splinter/GAME_PLAN.md`: grade 6-conectada, portas em juntas
+> revolute, lanternas em correntes esféricas, cinco armas. Three.js + Rapier.
 
 > **Canyon Rails** (`railcanyon/`) é a recriação original do jogo do vídeo
 > https://x.com/DilumSanjaya/status/2086858760753201622 (baixado como
@@ -31,8 +38,9 @@ prisma/        Prisma        — puzzle diário de luz e espelhos (canvas 2D)
 > contratos, desvios com locomotiva própria, dinamite, áudio, save).
 >
 > `.github/workflows/deploy.yml` publica tudo no GitHub Pages: `/` (seleção),
-> `/isle-builder/` e `/canyon-rails/`. Como os jogos ficam em subdiretórios,
-> **nenhum caminho de asset pode ser absoluto** — use `import.meta.env.BASE_URL`
+> `/isle-builder/`, `/canyon-rails/`, `/prisma/` e `/splinter/`. Como os jogos
+> ficam em subdiretórios, **nenhum caminho de asset pode ser absoluto** — use
+> `import.meta.env.BASE_URL`
 > (um `/assets/logo.png` fixo quebrou os ícones do Isle Builder no deploy).
 >
 > Gotcha que custou tempo (vale para os dois jogos): se `update()` do loop lançar

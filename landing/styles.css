@@ -225,6 +225,7 @@ body {
 .cabinet.isle { --accent: var(--sea); --accent-2: var(--leaf); }
 .cabinet.canyon { --accent: var(--clay); --accent-2: var(--lagoon); }
 .cabinet.prisma { --accent: var(--grape); --accent-2: var(--sea); }
+.cabinet.splinter { --accent: #c45c28; --accent-2: #e0a04a; }
 
 /* Halo colorido girando atrás do gabinete. */
 .cabinet-glow {
@@ -341,6 +342,8 @@ body {
 .canyon-btn:hover { background: #ffc394; }
 .prisma-btn { background: #c9a6f0; }
 .prisma-btn:hover { background: #d6b9f5; }
+.splinter-btn { background: #e0a04a; }
+.splinter-btn:hover { background: #f0b45c; }
 
 .status {
   margin: 0.9rem 0 0;

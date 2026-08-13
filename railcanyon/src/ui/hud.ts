@@ -338,8 +338,10 @@ function formatTime(seconds: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 }
 
+const ASSET = import.meta.env.BASE_URL;
+
 const TEMPLATE = `
-  <div id="title-chip"><span class="logo">🚂</span><span id="title-map">Canyon Rails</span></div>
+  <div id="title-chip"><span class="logo">🚂<img src="${ASSET}assets/ui/logo.png" alt="" onerror="this.remove()"></span><span id="title-map">Canyon Rails</span></div>
 
   <div id="stats">
     <div class="stat card"><span class="icon">🪙</span>
@@ -378,7 +380,7 @@ const TEMPLATE = `
   <div id="train-panel" class="card">
     <div class="header"><span id="train-name">Workhorse 1915</span>
       <button id="btn-train-next" class="clickable">▸</button></div>
-    <div class="portrait">🚂🚃🚃🚃</div>
+    <div class="portrait">🚂🚃🚃🚃<img src="${ASSET}assets/ui/train-portrait.png" alt="" onerror="this.remove()"></div>
     <div class="row"><span class="name">⏱️ Vel.</span>
       <span class="bar"><div id="speed-bar" style="background:linear-gradient(#5a9df0,#2f66c4)"></div></span>
       <span class="val" id="speed-val">0 mph</span></div>

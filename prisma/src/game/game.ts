@@ -5,16 +5,18 @@ import { isPlaceable } from '../puzzle/grid.ts';
 import type { Mirror, Placements } from '../puzzle/grid.ts';
 import { isSolved, simulate } from '../puzzle/simulate.ts';
 import type { Simulation } from '../puzzle/simulate.ts';
-import { BoardRenderer } from '../render/board.ts';
+import { GameAudio } from '../audio/audio.ts';
+import { GameLoop } from '../core/loop.ts';
+import { Board3D } from '../render/board3d.ts';
 import { Hud } from '../ui/hud.ts';
 import { loadProgress, saveProgress } from './progress.ts';
 
-/** Ordem do clique numa célula: vazio → / → \ → vazio. */
 const CYCLE: (Mirror | null)[] = ['slash', 'backslash', null];
 
 export class Game {
   private hud: Hud;
-  private board: BoardRenderer;
+  private board: Board3D;
+  private audio = new GameAudio();
   private current: DailyPuzzle;
   private placements: Placements = new Map();
   private sim: Simulation;
@@ -23,6 +25,10 @@ export class Game {
   private difficultyId: string;
   private message = '';
   private startedAt = performance.now();
+  private loop: GameLoop;
+  private lastLit = 0;
+  private lastMixCells = 0;
+  private lastPick: number | null = null;
 
   constructor(mount: HTMLElement) {
     const progress = loadProgress();
@@ -36,43 +42,43 @@ export class Game {
         this.helpOpen = open;
         this.hud.setHelpOpen(open);
       },
+      onMute: (muted) => this.audio.setMuted(muted),
     });
-    this.board = new BoardRenderer(this.hud.canvas);
+    this.board = new Board3D(this.hud.canvas);
 
     this.current = dailyPuzzle(todayKey(), this.difficultyId);
     this.sim = simulate(this.current.puzzle, this.placements);
-    // Retoma os espelhos do desafio de hoje, se houver.
     if (progress.dateKey === this.current.dateKey && progress.difficultyId === this.difficultyId) {
       for (const [index, mirror] of progress.placements) {
         if (isPlaceable(this.current.puzzle, index)) this.placements.set(index, mirror);
       }
     }
-    this.refresh();
 
-    this.hud.canvas.addEventListener('pointermove', (e) => this.onPointerMove(e));
-    this.hud.canvas.addEventListener('pointerleave', () => { this.hover = null; });
-    this.hud.canvas.addEventListener('pointerdown', (e) => this.onPointerDown(e));
-    this.hud.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-    window.addEventListener('keydown', (e) => this.onKey(e));
-    window.addEventListener('resize', () => {
-      this.board.resize(this.current.puzzle);
-      this.draw();
+    this.loop = new GameLoop((_dt, time) => {
+      this.hover = this.board.hoverCell();
+      this.board.sync(this.current.puzzle, this.placements, this.sim, this.hover);
+      this.board.update(_dt, time, isSolved(this.current.puzzle, this.sim));
+      this.publishDiagnostics();
     });
 
-    const tick = (): void => {
-      this.draw();
-      requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }
+    this.hud.canvas.addEventListener('pointerdown', () => this.audio.unlock());
+    this.hud.canvas.addEventListener('pointerup', (e) => this.onPointerUp(e));
+    window.addEventListener('keydown', (e) => this.onKey(e));
 
-  // ── Ciclo de vida do tabuleiro ─────────────────────────────────────
+    void this.board.ready.then(() => {
+      this.hud.setLoading(false);
+      this.refresh();
+      this.loop.start();
+    });
+  }
 
   private loadPuzzle(next: DailyPuzzle): void {
     this.current = next;
     this.placements = new Map();
     this.message = '';
     this.startedAt = performance.now();
+    this.lastLit = 0;
+    this.lastMixCells = 0;
     this.refresh();
   }
 
@@ -85,12 +91,24 @@ export class Game {
   private clearBoard(): void {
     this.placements.clear();
     this.message = 'Tabuleiro limpo.';
+    this.audio.play('click', 0.7);
     this.refresh();
   }
 
   private refresh(): void {
-    this.board.resize(this.current.puzzle);
+    this.board.rebuild(this.current.puzzle);
     this.recompute();
+  }
+
+  private mixCellCount(sim: Simulation): number {
+    let n = 0;
+    const { puzzle } = this.current;
+    for (let i = 0; i < puzzle.cells.length; i++) {
+      let dirs = 0;
+      for (let d = 0; d < 4; d++) if (sim.incoming[i * 4 + d]) dirs += 1;
+      if (dirs >= 2) n += 1;
+    }
+    return n;
   }
 
   private recompute(): void {
@@ -102,9 +120,16 @@ export class Game {
       const seconds = Math.max(1, Math.round((performance.now() - this.startedAt) / 1000));
       this.message = `Resolvido em ${seconds}s com ${this.placements.size} espelho(s)! `
         + 'Toda a luz chegou onde devia.';
+      this.audio.play('win', 0.85);
     } else if (!solved && this.message.startsWith('Resolvido')) {
       this.message = '';
     }
+
+    if (this.sim.lit.size > this.lastLit) this.audio.play('target', 0.8);
+    this.lastLit = this.sim.lit.size;
+    const mixes = this.mixCellCount(this.sim);
+    if (mixes > this.lastMixCells) this.audio.playMix();
+    this.lastMixCells = mixes;
 
     if (this.current.isDaily && this.current.dateKey === todayKey()) {
       saveProgress({
@@ -130,7 +155,6 @@ export class Game {
     }, puzzle, this.sim);
   }
 
-  /** Dica curta baseada no estado atual, no lugar de uma mensagem vazia. */
   private hint(): string {
     const { puzzle } = this.current;
     if (this.placements.size === 0) {
@@ -150,37 +174,28 @@ export class Game {
       + `${missing} espelho(s) no seu estoque.`;
   }
 
-  // ── Interação ──────────────────────────────────────────────────────
-
-  private cellFromEvent(e: PointerEvent | MouseEvent): number | null {
-    const rect = this.hud.canvas.getBoundingClientRect();
-    return this.board.cellFromPoint(
-      e.clientX - rect.left, e.clientY - rect.top, this.current.puzzle);
-  }
-
-  private onPointerMove(e: PointerEvent): void {
-    this.hover = this.cellFromEvent(e);
-  }
-
-  private onPointerDown(e: PointerEvent): void {
-    if (this.helpOpen) return;
-    const index = this.cellFromEvent(e);
+  private onPointerUp(e: PointerEvent): void {
+    if (this.helpOpen || this.board.didDrag()) return;
+    const index = this.board.pickCell();
+    this.lastPick = index;
     if (index === null || !isPlaceable(this.current.puzzle, index)) return;
 
     const current = this.placements.get(index) ?? null;
-    // Botão direito remove direto; o esquerdo percorre o ciclo.
     const next = e.button === 2 ? null : CYCLE[(CYCLE.indexOf(current) + 1) % CYCLE.length];
 
     if (next === null) {
       this.placements.delete(index);
+      this.audio.play('remove', 0.7);
     } else {
       if (current === null && this.placements.size >= this.current.puzzle.mirrorBudget) {
         this.message = `Você só tem ${this.current.puzzle.mirrorBudget} espelhos — `
           + 'tire um do tabuleiro antes de pôr outro.';
+        this.audio.play('error', 0.8);
         this.recompute();
         return;
       }
       this.placements.set(index, next);
+      this.audio.play(current === null ? 'place' : 'flip', 0.75);
     }
     if (this.message && !this.message.startsWith('Resolvido')) this.message = '';
     this.recompute();
@@ -193,12 +208,20 @@ export class Game {
     }
     if (e.code === 'KeyC') this.clearBoard();
     if (e.code === 'KeyN') this.loadPuzzle(randomPuzzle(this.difficultyId));
+    if (e.code === 'KeyM') {
+      this.audio.setMuted(!this.audio.muted);
+    }
   }
 
-  private draw(): void {
-    this.board.draw(
-      this.current.puzzle, this.placements, this.sim,
-      this.hover, performance.now() / 1000,
-    );
+  private publishDiagnostics(): void {
+    const diag = this.board.scene.diagnostics();
+    (window as unknown as { __THREE_GAME_DIAGNOSTICS__: unknown }).__THREE_GAME_DIAGNOSTICS__ = {
+      ...diag,
+      imported: this.board.models.stats,
+      puzzle: this.current.puzzle.difficulty,
+      mirrors: this.placements.size,
+      hover: this.hover,
+      lastPick: this.lastPick,
+    };
   }
 }

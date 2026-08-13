@@ -3,9 +3,12 @@ import * as THREE from 'three';
 import {
   normalizeModelToHeight,
   cloneBuildingModel,
+  cloneTrainModel,
   hasBuildingModel,
+  hasTrainModel,
   _resetModelCacheForTests,
   _setBuildingModelForTests,
+  _setTrainModelForTests,
 } from './modelLoader.ts';
 import { createBuilding } from '../world/buildings.ts';
 
@@ -68,5 +71,23 @@ describe('modelLoader', () => {
 
     const built = createBuilding('house');
     expect(built.getObjectByName('house-glb')).toBeTruthy();
+  });
+
+  it('cloneTrainModel returns a material-cloned locomotive when cached', () => {
+    const template = new THREE.Group();
+    template.name = 'model:locomotive';
+    template.userData.smokeOffset = new THREE.Vector3(1, 2, 0);
+    const marker = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1));
+    marker.name = 'loco-glb';
+    template.add(marker);
+    _setTrainModelForTests('locomotive', template);
+
+    expect(hasTrainModel('locomotive')).toBe(true);
+    const cloned = cloneTrainModel('locomotive');
+    expect(cloned).not.toBeNull();
+    expect(cloned).not.toBe(template);
+    expect(cloned?.getObjectByName('loco-glb')).toBeTruthy();
+    expect(cloned?.userData.smokeOffset).toBeInstanceOf(THREE.Vector3);
+    expect(cloned?.userData.smokeOffset).not.toBe(template.userData.smokeOffset);
   });
 });

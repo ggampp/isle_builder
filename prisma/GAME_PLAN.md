@@ -60,25 +60,29 @@ mesmo para todo mundo. Há também tabuleiros avulsos com semente aleatória.
 
 ## 4. Arquitetura
 
-Vite + TypeScript, sem dependências de runtime; render em **canvas 2D** (sem
-Three.js — o jogo é plano).
+Vite + TypeScript + **Three.js**. A lógica do puzzle continua pura (sem DOM);
+o tabuleiro vive num ateliê óptico 3D. Conceitos 2D saem do Gemini (com
+fallback Fal Flux se a cota de imagem estourar) e os GLBs vêm do Fal Tripo H3.1
+(image-to-3D). Áudio via ElevenLabs.
 
 - `src/puzzle/` — lógica pura, sem DOM: `colors.ts` (máscaras e mistura),
   `grid.ts` (direções, espelhos, células), `simulate.ts` (propagação por ponto
   fixo), `generate.ts` (gerador + dificuldades), `daily.ts` (semente do dia).
-- `src/render/board.ts` — desenha tabuleiro, feixes (meia-hasta de entrada com a
-  cor de quem chega, de saída com a mistura), espelhos, emissores e alvos.
-- `src/ui/hud.ts` + `styles.css` — cabeçalho, contadores, legenda dos alvos,
-  botões e a folha "como jogar".
+- `src/render/` — cena Three.js, tabuleiro 3D, feixes volumétricos, kit do
+  ateliê, catálogo GLB com fallback procedural, bloom.
+- `src/ui/hud.ts` + `styles.css` — HUD sobre o canvas, metros, legenda, ajuda.
+- `src/audio/` — Web Audio (ambience + SFX), destrava no primeiro gesto.
 - `src/game/` — `game.ts` (interação e estado) e `progress.ts` (localStorage do
   desafio do dia, validado na leitura).
+- `scripts/` — `generate_images.py`, `generate_models_fal.py`, `generate_audio.py`.
 
 ## 5. Estado
 
-Jogo completo e jogável: puzzle diário nas três dificuldades, tabuleiros extras,
-progresso salvo, dicas contextuais e tela de vitória. 23 testes cobrindo mistura
-de cores, reflexão, propagação (incluindo estabilidade com o tabuleiro cheio de
-espelhos), gerador e semente do dia.
+Jogo completo e jogável em **Three.js 3D**: puzzle diário nas três dificuldades,
+tabuleiros extras, progresso salvo, dicas, áudio e tela de vitória. A lógica
+em `src/puzzle/` permanece pura (23 testes). O tabuleiro vive num ateliê óptico
+com modelos Fal (emissor, alvo, espelho, parede, coluna, lâmpada) a partir de
+conceitos 2D (Gemini 429 → fallback Fal Flux).
 
 Ideias para depois: contador de sequência de dias, compartilhar o resultado em
 emojis, animar o avanço da luz e um modo com divisores de feixe.

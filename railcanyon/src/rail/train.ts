@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { cloneTrainModel } from '../render/modelLoader.ts';
 import { sampleAt } from './network.ts';
 import type { TrackPath } from './network.ts';
 
@@ -270,8 +271,8 @@ export class Train {
 
   private rebuildCars(): void {
     for (const car of this.cars) this.group.remove(car);
-    this.cars = [buildLocomotive()];
-    for (let i = 0; i < this.wagons; i++) this.cars.push(buildWagon());
+    this.cars = [cloneTrainModel('locomotive') ?? buildLocomotive()];
+    for (let i = 0; i < this.wagons; i++) this.cars.push(cloneTrainModel('wagon') ?? buildWagon());
     for (const car of this.cars) this.group.add(car);
     this.cargoCapacity = 14 * this.wagons;
   }
@@ -307,8 +308,10 @@ export class Train {
       if (slot < 0) slot = 0;
       const loco = this.cars[0];
       const puff = this.smoke[slot];
-      puff.position.copy(new THREE.Vector3(1.6, 3.4, 0)
-        .applyEuler(loco.rotation).add(loco.position));
+      const offset = loco.userData.smokeOffset instanceof THREE.Vector3
+        ? loco.userData.smokeOffset
+        : new THREE.Vector3(1.6, 3.4, 0);
+      puff.position.copy(offset).applyEuler(loco.rotation).add(loco.position);
       puff.scale.setScalar(0.6);
       puff.visible = true;
       this.smokeAge[slot] = 0;

@@ -1,0 +1,221 @@
+:root {
+  --ink: #1a120c;
+  --cream: #f4e6c8;
+  --rust: #c45c28;
+  --gold: #e0a04a;
+  --panel: rgba(18, 12, 8, 0.72);
+  --safe: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #1a120c;
+  color: var(--cream);
+  font-family: Palatino, 'Palatino Linotype', Georgia, serif;
+}
+
+#hud {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+#view {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.weapon-title {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: clamp(1.6rem, 4vw, 2.6rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-shadow: 0 2px 0 #3a2010, 0 0 18px rgba(224, 160, 74, 0.45);
+  pointer-events: none;
+  min-width: 12ch;
+  text-align: center;
+}
+
+.integrity {
+  position: absolute;
+  top: max(58px, calc(env(safe-area-inset-top) + 48px));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(280px, 70vw);
+  height: 14px;
+  border: 2px solid #3a2a18;
+  background: var(--panel);
+  pointer-events: none;
+}
+.integrity span {
+  position: absolute;
+  left: 8px;
+  top: -16px;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.integrity-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #c45c28, #e0a04a);
+}
+
+.score {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  min-width: 5ch;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  text-align: right;
+  pointer-events: none;
+}
+
+.hotbar {
+  position: absolute;
+  left: 50%;
+  bottom: calc(18px + var(--safe));
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--panel);
+  border: 3px solid #3a2a18;
+  border-radius: 6px;
+}
+
+.slot {
+  width: 72px;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 2px solid #5a4030;
+  background: #24180f;
+  color: var(--cream);
+  cursor: pointer;
+  padding: 4px;
+}
+.slot .ico {
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--gold);
+}
+.slot img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+.slot .num {
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+.slot .lab {
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.slot.active {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px var(--gold);
+}
+
+.tools {
+  position: absolute;
+  top: max(14px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  display: flex;
+  gap: 8px;
+}
+.tool {
+  border: 2px solid #5a4030;
+  background: var(--panel);
+  color: var(--cream);
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+.tool kbd {
+  font-family: inherit;
+  color: var(--gold);
+}
+
+.fire-btn {
+  display: none;
+  position: absolute;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(110px + var(--safe));
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  border: 3px solid var(--gold);
+  background: var(--rust);
+  color: var(--cream);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  border: 2px solid #1a120c;
+  border-radius: 1px;
+  box-shadow: 0 0 0 1px rgba(244, 230, 200, 0.5);
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 10px;
+  background: rgba(18, 12, 8, 0.45);
+  text-align: center;
+  padding: 24px;
+  pointer-events: none;
+}
+.overlay.hidden { display: none; }
+.overlay-copy {
+  margin: 0;
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  color: var(--gold);
+}
+.overlay-hint {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.85;
+  max-width: 36rem;
+}
+
+@media (max-width: 720px) {
+  .slot { width: 56px; min-height: 64px; }
+  .slot .lab { display: none; }
+  .fire-btn { display: grid; place-items: center; }
+  .weapon-title { font-size: 1.35rem; }
+}

@@ -32,7 +32,9 @@
 #title-chip .logo {
   width: 32px; height: 32px; border-radius: 8px; background: #f6ead2;
   display: flex; align-items: center; justify-content: center; font-size: 19px;
+  overflow: hidden; position: relative;
 }
+#title-chip .logo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; background: #f6ead2; }
 
 /* ── Topo centro: economia ─────────────────────────────── */
 #stats { position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
@@ -116,7 +118,9 @@
   display: none; }
 #train-panel .portrait { background: #fdf6e4; border: 2px solid #e2cfa8;
   border-radius: 10px; height: 58px; display: flex; align-items: center;
-  justify-content: center; font-size: 27px; margin-bottom: 7px; }
+  justify-content: center; font-size: 27px; margin-bottom: 7px; overflow: hidden;
+  position: relative; }
+#train-panel .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; background: #fdf6e4; }
 #train-panel .row { display: flex; align-items: center; gap: 7px;
   font-size: 12px; font-weight: 700; padding: 3px 2px; }
 #train-panel .row .name { flex: 0 0 62px; }
@@ -226,7 +230,10 @@ button:active { transform: translateY(1px); }
   background: linear-gradient(#4a83e8, #2a55a8);
   display: grid; place-items: center; font-size: 28px;
   border: 2px solid #fff;
+  overflow: hidden;
+  position: relative;
 }
+.map-select-brand .logo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .map-select-brand h1 {
   margin: 0; font-size: 28px; color: var(--ink-strong);
 }
