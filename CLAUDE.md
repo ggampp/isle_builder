@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Layout do repositório (mudou em 2026-08-11)
 
-Este repositório abriga **quatro jogos** e uma página de seleção. A raiz não é mais
+Este repositório abriga **cinco jogos** e uma página de seleção. A raiz não é mais
 uma app: cada jogo tem `package.json`, `node_modules` e testes próprios, então
 **sempre rode `npm ...` de dentro do diretório do jogo**.
 
@@ -12,8 +12,9 @@ uma app: cada jogo tem `package.json`, `node_modules` e testes próprios, então
 landing/       página de seleção (HTML+CSS estáticos, sem build)
 islebuilder/   Isle Builder  — o jogo descrito no resto deste arquivo
 railcanyon/    Canyon Rails  — builder de ferrovias 3D low-poly
-prisma/        Prisma        — puzzle diário de luz e espelhos (canvas 2D)
+prisma/        Prisma        — puzzle diário de luz e espelhos (Three.js 3D)
 splinter/      Splinter      — playground FPS de destruição voxel (Three.js + Rapier)
+glint/         Glint         — action RPG num vale HD-2D (magia, slimes, level-up)
 ```
 
 > **Prisma** (`prisma/`) é a recriação original do puzzle de luz do post
@@ -24,6 +25,12 @@ splinter/      Splinter      — playground FPS de destruição voxel (Three.js 
 > resolvível; a semente vem da data, então o desafio do dia é igual para todos.
 > Render em **Three.js 3D** (ateliê óptico); a lógica em `src/puzzle/` continua
 > pura e testável. Assets: Gemini/Fal para conceitos, Fal Tripo H3.1 para GLBs.
+
+> **Glint** (`glint/`) é a recriação original do action RPG do post
+> https://x.com/Sthilhearts/status/2087471340911751547, com regras em
+> `glint/GAME_PLAN.md`: magia em círculo (2 MP) cujo dano cresce com o nível,
+> cutelo grátis sem mana, cristais que restauram +10 HP, slimes e um golém.
+> Three.js, lógica pura em `src/sim/`.
 
 > **Splinter** (`splinter/`) é a recriação original do playground de destruição
 > voxel do post https://x.com/parazar/status/2087567094741176323, com regras
@@ -38,7 +45,7 @@ splinter/      Splinter      — playground FPS de destruição voxel (Three.js 
 > contratos, desvios com locomotiva própria, dinamite, áudio, save).
 >
 > `.github/workflows/deploy.yml` publica tudo no GitHub Pages: `/` (seleção),
-> `/isle-builder/`, `/canyon-rails/`, `/prisma/` e `/splinter/`. Como os jogos
+> `/isle-builder/`, `/canyon-rails/`, `/prisma/`, `/splinter/` e `/glint/`. Como os jogos
 > ficam em subdiretórios, **nenhum caminho de asset pode ser absoluto** — use
 > `import.meta.env.BASE_URL`
 > (um `/assets/logo.png` fixo quebrou os ícones do Isle Builder no deploy).

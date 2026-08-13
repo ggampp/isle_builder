@@ -6,15 +6,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-mcps/
 
 node_modules
 dist
 dist-ssr
 *.local
-.env
-islebuilder/assets/generated/raw/
-terminals/
 
 # Editor directories and files
 .vscode/*
@@ -26,12 +22,3 @@ terminals/
 *.njsproj
 *.sln
 *.sw?
-
-# Video de referencia (grande, nao deve ser commitado)
-game_video.mp4
-shotgun.mp4
-glint.mp4
-_scratch_frames/
-
-# Site montado pelo deploy (landing + os jogos)
-site/
