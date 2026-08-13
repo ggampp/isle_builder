@@ -226,6 +226,7 @@ body {
 .cabinet.canyon { --accent: var(--clay); --accent-2: var(--lagoon); }
 .cabinet.prisma { --accent: var(--grape); --accent-2: var(--sea); }
 .cabinet.splinter { --accent: #c45c28; --accent-2: #e0a04a; }
+.cabinet.glint { --accent: #3a8fd0; --accent-2: #6fbe48; }
 
 /* Halo colorido girando atrás do gabinete. */
 .cabinet-glow {
@@ -344,6 +345,8 @@ body {
 .prisma-btn:hover { background: #d6b9f5; }
 .splinter-btn { background: #e0a04a; }
 .splinter-btn:hover { background: #f0b45c; }
+.glint-btn { background: #8fd0f5; }
+.glint-btn:hover { background: #a8dcf8; }
 
 .status {
   margin: 0.9rem 0 0;

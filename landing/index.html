@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sala de Jogos — quatro mundos no navegador</title>
-    <meta name="description" content="Quatro jogos feitos do zero em TypeScript: ilha pixel, ferrovia 3D, puzzle de luz e um saloon voxel para destruir." />
+    <title>Sala de Jogos — cinco mundos no navegador</title>
+    <meta name="description" content="Cinco jogos feitos do zero em TypeScript: ilha pixel, ferrovia 3D, puzzle de luz, saloon voxel e um vale de magia." />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
   </head>
@@ -26,11 +26,13 @@
       <span style="--x: 74%; --d: -15s;  --s: 0.85">⛵</span>
       <span style="--x: 88%; --d: -5s;   --s: 1.05">🛤️</span>
       <span style="--x: 41%; --d: -8s;   --s: 1.0">🔫</span>
-      <span style="--x: 55%; --d: -11s;  --s: 0.9">🏮</span>
+      <span style="--x: 55%; --d: -11s; --s: 0.9">🏮</span>
+      <span style="--x: 12%; --d: -4s;  --s: 1.0">✨</span>
+      <span style="--x: 68%; --d: -14s; --s: 0.95">🟢</span>
     </div>
 
     <header class="hero">
-      <p class="kicker"><span>◆</span> quatro jogos · um repositório · feitos do zero <span>◆</span></p>
+      <p class="kicker"><span>◆</span> cinco jogos · um repositório · feitos do zero <span>◆</span></p>
       <h1 class="title">
         <span class="line-1">SALA</span>
         <span class="line-2">DE JOGOS</span>
@@ -42,7 +44,7 @@
       </p>
       <div class="badges">
         <span class="badge b1">🎨 mundos gerados em código</span>
-        <span class="badge b2">🧪 122 testes</span>
+        <span class="badge b2">🧪 146 testes</span>
         <span class="badge b3">🕹️ joga no navegador</span>
         <span class="badge b4">💾 salva no seu navegador</span>
       </div>
@@ -50,8 +52,8 @@
 
     <div class="ticker" aria-hidden="true">
       <div class="ticker-track">
-        <span>PINTE UMA ILHA ✦ ASSENTE TRILHOS ✦ DERRUBE O SALOON ✦ MISTURE A LUZ ✦ EXPLODA PEDRAS ✦ FECHE CONTRATOS ✦</span>
-        <span>PINTE UMA ILHA ✦ ASSENTE TRILHOS ✦ DERRUBE O SALOON ✦ MISTURE A LUZ ✦ EXPLODA PEDRAS ✦ FECHE CONTRATOS ✦</span>
+        <span>PINTE UMA ILHA ✦ ASSENTE TRILHOS ✦ DERRUBE O SALOON ✦ MISTURE A LUZ ✦ SUBA DE NÍVEL ✦ EXPLODA PEDRAS ✦ FECHE CONTRATOS ✦</span>
+        <span>PINTE UMA ILHA ✦ ASSENTE TRILHOS ✦ DERRUBE O SALOON ✦ MISTURE A LUZ ✦ SUBA DE NÍVEL ✦ EXPLODA PEDRAS ✦ FECHE CONTRATOS ✦</span>
       </div>
     </div>
 
@@ -349,6 +351,71 @@
           <p class="status">Jogo completo · playground de destruição</p>
         </div>
       </article>
+      <!-- ─────────────────────────── Glint ──────────────────────── -->
+      <article class="cabinet glint">
+        <div class="cabinet-glow" aria-hidden="true"></div>
+        <div class="screen">
+          <svg viewBox="0 0 320 200" role="img" aria-label="Vale gramado com rio, slimes e uma viajante pixelada, com o texto Level Up">
+            <rect width="320" height="200" fill="#9ec8e8" />
+            <rect y="70" width="320" height="130" fill="#5aaa3a" />
+            <!-- falésias em degrau -->
+            <g>
+              <rect x="0" y="48" width="70" height="90" fill="#7a4a28" />
+              <rect x="0" y="48" width="70" height="18" fill="#6fbe48" />
+              <rect x="250" y="40" width="70" height="100" fill="#8a5a3c" />
+              <rect x="250" y="40" width="70" height="16" fill="#5aaa3a" />
+            </g>
+            <!-- rio -->
+            <path d="M118 0 q18 40 8 70 t22 60 t-10 70" fill="#5fd3c8" stroke="#7ee0ea" stroke-width="18" stroke-linecap="round" />
+            <path d="M118 0 q18 40 8 70 t22 60 t-10 70" fill="none" stroke="#8fe8f2" stroke-width="8" opacity="0.5" />
+            <!-- menir -->
+            <rect x="196" y="86" width="10" height="28" rx="2" fill="#4a4a52" />
+            <!-- cristal -->
+            <path d="M268 92 l10-16 10 16 -10 8z" fill="#6ec8ff" />
+            <ellipse cx="278" cy="112" rx="16" ry="5" fill="#e8f4ff" opacity="0.8" />
+            <!-- slimes -->
+            <ellipse cx="86" cy="128" rx="14" ry="11" fill="#7ad65a" />
+            <circle cx="81" cy="125" r="2" fill="#1a1a18" />
+            <circle cx="90" cy="125" r="2" fill="#1a1a18" />
+            <ellipse cx="230" cy="148" rx="12" ry="9" fill="#7ad65a" />
+            <circle cx="226" cy="146" r="1.6" fill="#1a1a18" />
+            <circle cx="233" cy="146" r="1.6" fill="#1a1a18" />
+            <!-- heroína -->
+            <g transform="translate(148,118)">
+              <rect x="6" y="22" width="8" height="10" fill="#3a2a22" />
+              <rect x="7" y="12" width="6" height="8" fill="#f0c9a0" />
+              <rect x="5" y="8" width="10" height="7" fill="#e8c45a" />
+              <rect x="14" y="10" width="4" height="10" fill="#c9a040" />
+            </g>
+            <!-- círculo mágico -->
+            <ellipse cx="160" cy="152" rx="28" ry="8" fill="none" stroke="#fff2a0" stroke-width="3" />
+            <text x="160" y="38" text-anchor="middle" font-size="22" font-family="Trebuchet MS, sans-serif" font-weight="800" fill="#b8e4ff" stroke="#2a5080" stroke-width="3" paint-order="stroke fill">Level Up !</text>
+          </svg>
+          <div class="scanlines" aria-hidden="true"></div>
+        </div>
+        <div class="cabinet-body">
+          <div class="marquee-plate">
+            <h2>Glint</h2>
+            <p class="sub">vale de magia</p>
+          </div>
+          <p class="pitch">
+            Uma viajante pixelada num vale de brinquedo. Gaste mana num
+            <b>círculo mágico</b>, derrube slimes e suba de nível — cada nível
+            deixa o golpe mais forte, até o slime cair num único clarão.
+          </p>
+          <ul class="chips">
+            <li>✨ magia e cutelo</li>
+            <li>🟢 slimes e golém</li>
+            <li>💎 cristais de descanso</li>
+            <li>📈 level-up de verdade</li>
+          </ul>
+          <a class="play glint-btn" href="./glint/">
+            <span class="play-label">Jogar Glint</span>
+            <span class="play-arrow" aria-hidden="true">▶</span>
+          </a>
+          <p class="status">Jogo completo · action RPG no vale</p>
+        </div>
+      </article>
     </main>
 
     <section class="how">
@@ -363,7 +430,10 @@ cd railcanyon &amp;&amp; npm install &amp;&amp; npm run dev
 cd prisma &amp;&amp; npm install &amp;&amp; npm run dev
 
 # Splinter
-cd splinter &amp;&amp; npm install &amp;&amp; npm run dev</code></pre>
+cd splinter &amp;&amp; npm install &amp;&amp; npm run dev
+
+# Glint
+cd glint &amp;&amp; npm install &amp;&amp; npm run dev</code></pre>
       <p>
         Cada jogo é uma aplicação Vite independente, com seus próprios testes
         (<code>npm run test</code>) e gate de tipos no build.
@@ -372,7 +442,7 @@ cd splinter &amp;&amp; npm install &amp;&amp; npm run dev</code></pre>
 
     <footer>
       <p>Feito à mão, pixel e polígono por vez.</p>
-      <p class="small">Isle Builder · Canyon Rails · Prisma · Splinter · TypeScript · Vite</p>
+      <p class="small">Isle Builder · Canyon Rails · Prisma · Splinter · Glint · TypeScript · Vite</p>
     </footer>
   </body>
 </html>

@@ -1,14 +1,15 @@
 # Sala de Jogos
 
-Quatro jogos de navegador feitos do zero em TypeScript, cada um numa aplicação
+Cinco jogos de navegador feitos do zero em TypeScript, cada um numa aplicação
 Vite independente, mais uma página inicial para escolher entre eles.
 
 ```
 landing/       página de seleção (HTML + CSS estáticos, sem build)
 islebuilder/   Isle Builder — sandbox de pintura de ilhas em pixel art (2D)
 railcanyon/    Canyon Rails — construtor de ferrovias num desfiladeiro (3D low-poly)
-prisma/        Prisma — puzzle diário de luz, espelhos e mistura de cores (2D)
+prisma/        Prisma — puzzle diário de luz, espelhos e mistura de cores (3D)
 splinter/      Splinter — playground FPS de destruição voxel (Three.js + Rapier)
+glint/         Glint — action RPG num vale HD-2D, magia, slimes e level-up
 AIMemory/      memória compartilhada entre sessões de agentes
 ```
 
@@ -21,6 +22,7 @@ cd islebuilder && npm install && npm run dev    # Isle Builder
 cd railcanyon && npm install && npm run dev     # Canyon Rails
 cd prisma     && npm install && npm run dev     # Prisma
 cd splinter   && npm install && npm run dev     # Splinter
+cd glint      && npm install && npm run dev     # Glint
 ```
 
 Em todos: `npm run test` roda os testes e `npm run build` roda o gate de tipos
@@ -42,6 +44,7 @@ na `main`:
 | `/canyon-rails/` | Canyon Rails |
 | `/prisma/` | Prisma |
 | `/splinter/` | Splinter |
+| `/glint/` | Glint |
 
 Para montar o mesmo site localmente:
 
@@ -50,12 +53,14 @@ Para montar o mesmo site localmente:
 (cd railcanyon && npx vite build --base=/canyon-rails/)
 (cd prisma     && npx vite build --base=/prisma/)
 (cd splinter   && npx vite build --base=/splinter/)
-mkdir -p site/isle-builder site/canyon-rails site/prisma site/splinter
+(cd glint      && npx vite build --base=/glint/)
+mkdir -p site/isle-builder site/canyon-rails site/prisma site/splinter site/glint
 cp -r landing/. site/
 cp -r islebuilder/dist/. site/isle-builder/
 cp -r railcanyon/dist/. site/canyon-rails/
 cp -r prisma/dist/. site/prisma/
 cp -r splinter/dist/. site/splinter/
+cp -r glint/dist/. site/glint/
 npx serve site
 ```
 
@@ -69,4 +74,5 @@ O deploy só funciona depois de habilitar Pages em
 - `railcanyon/GAME_PLAN.md` — plano e fases do Canyon Rails
 - `prisma/GAME_PLAN.md` — regras, gerador e arquitetura do Prisma
 - `splinter/GAME_PLAN.md` — regras, física e armas do Splinter
+- `glint/GAME_PLAN.md` — regras de magia, XP e o vale do Glint
 - `AIMemory/handoffs/` — histórico de sessões
