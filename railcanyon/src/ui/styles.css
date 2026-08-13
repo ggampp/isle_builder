@@ -199,3 +199,75 @@
 
 button { font-family: inherit; }
 button:active { transform: translateY(1px); }
+
+/* ── Seleção de mapa ───────────────────────────────────── */
+#map-select {
+  position: fixed; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(ellipse at 30% 20%, #f8d9a8 0%, transparent 50%),
+    linear-gradient(160deg, #e8a86a 0%, #c98a5a 45%, #8a5a34 100%);
+  pointer-events: auto;
+}
+.map-select-card {
+  width: min(920px, 94vw);
+  background: var(--card);
+  border: 3px solid #fff;
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 28px 28px 24px;
+  color: var(--ink);
+}
+.map-select-brand {
+  display: flex; gap: 16px; align-items: center; margin-bottom: 22px;
+}
+.map-select-brand .logo {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: linear-gradient(#4a83e8, #2a55a8);
+  display: grid; place-items: center; font-size: 28px;
+  border: 2px solid #fff;
+}
+.map-select-brand h1 {
+  margin: 0; font-size: 28px; color: var(--ink-strong);
+}
+.map-select-brand p {
+  margin: 4px 0 0; font-size: 14px; font-weight: 600; opacity: 0.8;
+}
+.map-select-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+.map-card {
+  text-align: left;
+  border: 2.5px solid #fff;
+  border-radius: 16px;
+  background: #fff8ea;
+  box-shadow: var(--shadow);
+  padding: 16px 16px 14px;
+  color: var(--ink);
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.map-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 rgba(90, 60, 30, 0.25), 0 12px 22px rgba(90, 60, 30, 0.2);
+}
+.map-card-accent {
+  position: absolute; left: 0; top: 0; bottom: 0; width: 7px;
+  background: var(--accent, #c98a5a);
+}
+.map-card h2 {
+  margin: 0 0 8px 6px; font-size: 20px; color: var(--ink-strong);
+}
+.map-card p {
+  margin: 0 0 14px 6px; font-size: 13px; font-weight: 600; line-height: 1.35;
+  min-height: 2.6em;
+}
+.map-card-meta {
+  margin-left: 6px;
+  display: flex; justify-content: space-between;
+  font-size: 12px; font-weight: 800; opacity: 0.75;
+}

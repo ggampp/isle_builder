@@ -29,6 +29,8 @@ import { PropPlacementController } from './props/propplacement.ts';
 import { buildPropsAtlas, invalidatePropsAtlasCache, loadPropsAtlasFromImage } from './render/art/propsAtlas.ts';
 import { PropRenderer } from './render/proprenderer.ts';
 import { PropPreviewRenderer } from './render/proppreviewrenderer.ts';
+import { preloadPropModels } from './render/propModels.ts';
+import { preloadEntityModels } from './render/entityModels.ts';
 import { getPropDefinition } from './props/catalog.ts';
 import { EntityManager } from './entities/manager.ts';
 import { EntityRenderer } from './render/entityrenderer.ts';
@@ -52,10 +54,30 @@ if (import.meta.env.DEV) {
 const initialSettings = loadSettings();
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, initialSettings.dpr));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 container.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x7ec8d8, 0.00045);
+
+const hemi = new THREE.HemisphereLight(0xfff2dd, 0x3a6a7a, 1.05);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffe6c0, 1.15);
+sun.position.set(180, 260, 120);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 10;
+sun.shadow.camera.far = 800;
+sun.shadow.camera.left = -220;
+sun.shadow.camera.right = 220;
+sun.shadow.camera.top = 220;
+sun.shadow.camera.bottom = -220;
+scene.add(sun);
+
 const isleCamera = new IsleCamera(window.innerWidth, window.innerHeight);
+isleCamera.x = 0;
+isleCamera.y = 0;
 const input = new InputManager(renderer.domElement);
 const ocean = new Ocean();
 scene.add(ocean.mesh);
@@ -293,8 +315,10 @@ async function boot(): Promise<void> {
   invalidatePropsAtlasCache();
   invalidateEntityAtlasCache();
   await Promise.all([
-    loadPropsAtlasFromImage('/assets/atlas/props-atlas.png'),
-    loadEntityAtlasFromImage('/assets/atlas/entity-atlas.png'),
+    loadPropsAtlasFromImage(`${import.meta.env.BASE_URL}assets/atlas/props-atlas.png`),
+    loadEntityAtlasFromImage(`${import.meta.env.BASE_URL}assets/atlas/entity-atlas.png`),
+    preloadPropModels(),
+    preloadEntityModels(),
   ]);
   const propsAtlas = buildPropsAtlas();
   const entityAtlas = buildEntityAtlas();
@@ -328,8 +352,17 @@ const loop = new GameLoop(
     coastRenderer.update(dt);
     coastRenderer.rebuildDirty();
     propRenderer.rebuildIfDirty();
+    propRenderer.faceCamera(isleCamera.three);
+    propPreviewRenderer?.faceCamera(isleCamera.three);
+    coastRenderer.faceCamera(isleCamera.three);
     entityManager.update(dt, isleCamera.x, isleCamera.y);
-    entityRenderer.sync(entityManager, isleCamera.x, isleCamera.y, uiManager.isPaused);
+    entityRenderer.sync(
+      entityManager,
+      isleCamera.x,
+      isleCamera.y,
+      uiManager.isPaused,
+      isleCamera.three,
+    );
     uiManager.updateMapTab({
       x: isleCamera.x,
       y: isleCamera.y,

@@ -3,8 +3,14 @@ import { isPieceKind } from '../rail/geometry.ts';
 import type { SerializedLine } from '../rail/network.ts';
 import type { BuildingKind } from '../world/buildings.ts';
 import { isBuildingKind } from '../world/buildings.ts';
+import { DEFAULT_WORLD_ID } from '../world/maps.ts';
 
+/** Chave legada (pré multi-mapa). */
 export const SAVE_KEY = 'canyon-rails-save-v1';
+
+export function saveKeyFor(mapId: string): string {
+  return `canyon-rails-save-${mapId}-v3`;
+}
 
 export interface SavedBuilding {
   kind: BuildingKind;
@@ -21,6 +27,7 @@ export interface SavedTrain {
 
 export interface SaveData {
   version: 2;
+  mapId?: string;
   lines: SerializedLine[];
   buildings: SavedBuilding[];
   trains: SavedTrain[];
@@ -30,9 +37,9 @@ export interface SaveData {
   xp: number;
 }
 
-export function writeSave(data: SaveData): boolean {
+export function writeSave(data: SaveData, mapId: string = DEFAULT_WORLD_ID): boolean {
   try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    localStorage.setItem(saveKeyFor(mapId), JSON.stringify({ ...data, mapId }));
     return true;
   } catch {
     return false;
@@ -40,13 +47,16 @@ export function writeSave(data: SaveData): boolean {
 }
 
 /**
- * Lê e valida o jogo salvo; devolve null se ausente ou corrompido. Saves da
- * versão 1 (linha única, antes dos desvios) são migrados.
+ * Lê e valida o jogo salvo do mapa; devolve null se ausente ou corrompido.
+ * Para Canyon Vale, tenta também a chave legada.
  */
-export function readSave(): SaveData | null {
+export function readSave(mapId: string = DEFAULT_WORLD_ID): SaveData | null {
   let raw: string | null = null;
   try {
-    raw = localStorage.getItem(SAVE_KEY);
+    raw = localStorage.getItem(saveKeyFor(mapId));
+    if (!raw && mapId === DEFAULT_WORLD_ID) {
+      raw = localStorage.getItem(SAVE_KEY);
+    }
   } catch {
     return null;
   }
@@ -68,6 +78,7 @@ export function readSave(): SaveData | null {
       const kinds = Array.isArray(parsed.track) ? readKinds(parsed.track) : [];
       return {
         version: 2,
+        mapId,
         lines: [{ anchorLineId: null, anchorPoseIndex: 0, kinds }],
         buildings,
         trains: [{
@@ -114,6 +125,7 @@ export function readSave(): SaveData | null {
 
     return {
       version: 2,
+      mapId,
       lines: lines.length > 0 ? lines : [{ anchorLineId: null, anchorPoseIndex: 0, kinds: [] }],
       buildings,
       trains: trains.length > 0 ? trains : [{ lineId: 0, wagons: 4, condition: 95 }],
@@ -127,11 +139,12 @@ export function readSave(): SaveData | null {
   }
 }
 
-export function clearSave(): void {
+export function clearSave(mapId: string = DEFAULT_WORLD_ID): void {
   try {
-    localStorage.removeItem(SAVE_KEY);
+    localStorage.removeItem(saveKeyFor(mapId));
+    if (mapId === DEFAULT_WORLD_ID) localStorage.removeItem(SAVE_KEY);
   } catch {
-    // sem persistência disponível — o jogo segue funcionando em memória
+    // sem persistência disponível
   }
 }
 

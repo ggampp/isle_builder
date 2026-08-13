@@ -7,6 +7,8 @@ import { DecorationKind } from '../world/coast.ts';
 import { getPropDefinition } from '../props/catalog.ts';
 import type { PropAtlas } from './art/propsAtlas.ts';
 import { createPropSpriteMaterial, disposePropSpriteMaterial, propFeetWorld, propWorldSize } from './art/propSpriteUtils.ts';
+import { toWorld3 } from '../core/world3d.ts';
+import { clonePropModel, hasPropModel } from './propModels.ts';
 
 const DECO_PROP_BY_KIND: Record<number, string> = {
   [DecorationKind.CoralPink]: 'coral_piece',
@@ -22,7 +24,7 @@ const SHALLOW_VERTEX = /* glsl */ `
   void main() {
     vUv = uv;
     vec4 worldPos = modelMatrix * vec4(position, 1.0);
-    vWorld = worldPos.xy;
+    vWorld = vec2(worldPos.x, -worldPos.z);
     gl_Position = projectionMatrix * viewMatrix * worldPos;
   }
 `;
@@ -94,8 +96,7 @@ interface ChunkCoastMeshes {
 }
 
 /**
- * Renderiza água rasa, espuma animada e decorações subaquáticas procedurais
- * por chunk, recalculando só os chunks marcados sujos pelo CoastManager.
+ * Água rasa / espuma / decorações no plano XZ (Y = altura).
  */
 export class CoastRenderer {
   readonly group = new THREE.Group();
@@ -122,7 +123,8 @@ export class CoastRenderer {
       },
       transparent: true,
       depthWrite: false,
-      depthTest: false,
+      depthTest: true,
+      side: THREE.DoubleSide,
     });
 
     this.foamMaterial = new THREE.ShaderMaterial({
@@ -133,7 +135,8 @@ export class CoastRenderer {
       },
       transparent: true,
       depthWrite: false,
-      depthTest: false,
+      depthTest: true,
+      side: THREE.DoubleSide,
     });
   }
 
@@ -147,9 +150,7 @@ export class CoastRenderer {
     if (this.foamEnabled === enabled) return;
     this.foamEnabled = enabled;
     for (const meshes of this.meshesByChunk.values()) {
-      if (meshes.foam) {
-        meshes.foam.visible = enabled;
-      }
+      if (meshes.foam) meshes.foam.visible = enabled;
     }
   }
 
@@ -161,7 +162,6 @@ export class CoastRenderer {
     }
   }
 
-  /** Remove meshes de chunks que não existem mais no tilemap (ex.: após limpar o mapa). */
   reconcileChunks(tilemap: Tilemap): void {
     const activeKeys = new Set<string>();
     for (const chunk of tilemap.allChunks()) {
@@ -214,11 +214,11 @@ export class CoastRenderer {
         const info = this.coastManager.getTileInfo(tileX, tileY);
 
         if (info.isShallow) {
-          this.pushQuad(shallowPositions, shallowUvs, shallowIndices, shallowQuads, tileX, tileY, -0.5);
+          this.pushQuad(shallowPositions, shallowUvs, shallowIndices, shallowQuads, tileX, tileY, -0.04);
           shallowQuads++;
 
           if (info.hasFoam) {
-            this.pushQuad(foamPositions, foamUvs, foamIndices, foamQuads, tileX, tileY, 0.05);
+            this.pushQuad(foamPositions, foamUvs, foamIndices, foamQuads, tileX, tileY, 0.02);
             foamQuads++;
           }
         }
@@ -250,46 +250,58 @@ export class CoastRenderer {
     const group = new THREE.Group();
     group.renderOrder = 0.3;
 
-    const byKind = new Map<number, { x: number; y: number }[]>();
     for (const e of entries) {
-      const list = byKind.get(e.kind) ?? [];
-      list.push({ x: e.x, y: e.y });
-      byKind.set(e.kind, list);
-    }
-
-    for (const [kind, tiles] of byKind) {
-      const propId = DECO_PROP_BY_KIND[kind];
+      const propId = DECO_PROP_BY_KIND[e.kind];
       const def = propId ? getPropDefinition(propId) : undefined;
       if (!def) continue;
 
-      const { w, h } = propWorldSize(def);
-      const geo = new THREE.PlaneGeometry(w, h);
+      const feet = propFeetWorld(def, e.x, e.y);
+      const pos = toWorld3(feet.x, feet.y, 0);
+      const scale = e.kind === DecorationKind.CoralPink || e.kind === DecorationKind.CoralOrange ? 0.55 : 0.75;
 
-      const mat = createPropSpriteMaterial(def, this.propsAtlas, {
-        color: kind === DecorationKind.CoralPink ? 0xffaacc
-          : kind === DecorationKind.CoralOrange ? 0xffcc88
-          : 0xffffff,
-      });
-
-      const isCoral =
-        kind === DecorationKind.CoralPink || kind === DecorationKind.CoralOrange;
-      const scale = isCoral ? 0.55 : 0.75;
-
-      const mesh = new THREE.InstancedMesh(geo, mat, tiles.length);
-      const dummy = new THREE.Object3D();
-      for (let i = 0; i < tiles.length; i++) {
-        const t = tiles[i]!;
-        const feet = propFeetWorld(def, t.x, t.y);
-        dummy.position.set(feet.x, feet.y + h * 0.5 * scale, 0.15);
-        dummy.scale.set(scale, scale, 1);
-        dummy.updateMatrix();
-        mesh.setMatrixAt(i, dummy.matrix);
+      if (hasPropModel(def.id)) {
+        const model = clonePropModel(def.id)!;
+        model.position.copy(pos);
+        model.scale.multiplyScalar(scale);
+        model.traverse((obj) => {
+          if (obj instanceof THREE.Mesh) {
+            obj.castShadow = true;
+            obj.receiveShadow = true;
+          }
+        });
+        group.add(model);
+        continue;
       }
-      mesh.instanceMatrix.needsUpdate = true;
+
+      const { w, h } = propWorldSize(def);
+      const geo = new THREE.PlaneGeometry(w * scale, h * scale);
+      const mat = createPropSpriteMaterial(def, this.propsAtlas, {
+        color:
+          e.kind === DecorationKind.CoralPink
+            ? 0xffaacc
+            : e.kind === DecorationKind.CoralOrange
+              ? 0xffcc88
+              : 0xffffff,
+        depthTest: true,
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(pos.x, pos.y + (h * scale) * 0.5, pos.z);
+      mesh.castShadow = true;
+      mesh.userData.billboard = true;
       group.add(mesh);
     }
 
     return group;
+  }
+
+  /** Faz billboards de decoração olharem para a câmera. */
+  faceCamera(camera: THREE.Camera): void {
+    for (const meshes of this.meshesByChunk.values()) {
+      if (!meshes.decorations) continue;
+      meshes.decorations.traverse((obj) => {
+        if (obj.userData.billboard) obj.lookAt(camera.position);
+      });
+    }
   }
 
   private pushQuad(
@@ -299,16 +311,22 @@ export class CoastRenderer {
     quadIndex: number,
     tileX: number,
     tileY: number,
-    z: number,
+    height: number,
   ): void {
     const x0 = tileX * TILE_SIZE;
     const y0 = tileY * TILE_SIZE;
     const x1 = x0 + TILE_SIZE;
     const y1 = y0 + TILE_SIZE;
     const base = quadIndex * 4;
-    positions.push(x0, y0, z, x1, y0, z, x1, y1, z, x0, y1, z);
+    // Plano XZ: lógico +Y → mundo −Z
+    positions.push(
+      x0, height, -y0,
+      x1, height, -y0,
+      x1, height, -y1,
+      x0, height, -y1,
+    );
     uvs.push(0, 0, 1, 0, 1, 1, 0, 1);
-    indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+    indices.push(base, base + 2, base + 1, base, base + 3, base + 2);
   }
 
   private buildMesh(
@@ -338,7 +356,9 @@ export class CoastRenderer {
     if (!group) return;
     this.group.remove(group);
     group.traverse((obj) => {
-      if (obj instanceof THREE.Mesh) {
+      if (!(obj instanceof THREE.Mesh)) return;
+      // Só sprites locais — clones GLB compartilham geometria do cache.
+      if (obj.userData.billboard) {
         obj.geometry.dispose();
         disposePropSpriteMaterial(obj.material as THREE.Material);
       }

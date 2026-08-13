@@ -4,6 +4,7 @@ import type { PieceKind } from '../rail/geometry.ts';
 import { BUILDING_SPECS, BUILDING_KINDS } from '../world/buildings.ts';
 import type { BuildingKind } from '../world/buildings.ts';
 import { TOWNS } from '../world/towns.ts';
+import { getActiveWorld } from '../world/activeWorld.ts';
 import type { EconomySnapshot } from '../game/economy.ts';
 import type { Contract } from '../game/contracts.ts';
 import { trackIconUrl, buildingIconUrl, toolIconUrl } from './buildIcons.ts';
@@ -90,6 +91,8 @@ export class Hud {
 
     this.buildPalette();
     this.wireButtons();
+    const title = this.root.querySelector('#title-map');
+    if (title) title.textContent = getActiveWorld().name;
   }
 
   private query(selector: string): HTMLElement {
@@ -336,7 +339,7 @@ function formatTime(seconds: number): string {
 }
 
 const TEMPLATE = `
-  <div id="title-chip"><span class="logo">🚂</span>Canyon Rails</div>
+  <div id="title-chip"><span class="logo">🚂</span><span id="title-map">Canyon Rails</span></div>
 
   <div id="stats">
     <div class="stat card"><span class="icon">🪙</span>

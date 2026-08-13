@@ -8,6 +8,7 @@ import type { RockField } from '../world/scatter.ts';
 import { heightAt, slopeAt, WATER_LEVEL } from '../world/heightfield.ts';
 import { raycastGround } from '../world/raycast.ts';
 import { TOWNS, CONNECT_RADIUS, buildTowns, buildTownLabels, townById } from '../world/towns.ts';
+import { setActiveWorld } from '../world/activeWorld.ts';
 import { BUILDING_SPECS, createBuilding, makeGhost } from '../world/buildings.ts';
 import type { BuildingKind } from '../world/buildings.ts';
 import { RailNetwork, closestOnPath } from '../rail/network.ts';
@@ -54,9 +55,6 @@ interface TrainSlot {
   lineId: number;
 }
 
-/** Ponto e direção iniciais da linha, saindo de Pine Hollow rumo a leste. */
-const LINE_ORIGIN = { x: TOWNS[0].x + 8, z: TOWNS[0].z + 2, heading: -0.16 };
-
 export class Game {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -65,7 +63,9 @@ export class Game {
   private hud: Hud;
   private audio = new GameAudio();
 
-  private network = new RailNetwork(LINE_ORIGIN);
+  private mapId: string;
+  private lineOrigin: { x: number; z: number; heading: number };
+  private network: RailNetwork;
   private rocks: RockField;
   private trackGroup = new THREE.Group();
   private ghostGroup = new THREE.Group();
@@ -79,7 +79,7 @@ export class Game {
   private spinners: THREE.Object3D[] = [];
 
   private economy = new Economy(STARTING_COINS);
-  private contracts = new ContractBoard();
+  private contracts: ContractBoard;
   private objectives = new ObjectiveTracker();
   private progress: ObjectiveProgress = {
     piecesPlaced: 0,
@@ -98,7 +98,13 @@ export class Game {
   private windmillIncomeTimer = 0;
   private elapsed = 0;
 
-  constructor(container: HTMLElement) {
+  constructor(container: HTMLElement, mapId: string) {
+    const world = setActiveWorld(mapId);
+    this.mapId = world.id;
+    this.lineOrigin = { ...world.lineOrigin };
+    this.network = new RailNetwork(this.lineOrigin);
+    this.contracts = new ContractBoard(hashString(world.id));
+
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -108,7 +114,7 @@ export class Game {
 
     this.rocks = this.setupScene();
     this.camera = new CanyonCamera(window.innerWidth / window.innerHeight);
-    this.camera.focusOn(TOWNS[0].x + 30, TOWNS[0].z + 10, 130);
+    this.camera.focusOn(world.cameraFocus.x, world.cameraFocus.z, world.cameraFocus.distance);
     this.input = new InputManager(this.renderer.domElement);
     this.hud = new Hud(document.body, {
       onSelect: (selection) => this.onSelect(selection),
@@ -146,7 +152,7 @@ export class Game {
     window.addEventListener('keydown', unlock);
 
     new GameLoop((dt) => this.update(dt)).start();
-    this.hud.toast('Bem-vindo a Canyon Rails — estenda a linha e conecte o vale.');
+    this.hud.toast(world.welcome);
   }
 
   private setupScene(): RockField {
@@ -190,7 +196,7 @@ export class Game {
   // ── Estado inicial e persistência ──────────────────────────────────
 
   private loadOrSeed(): void {
-    const save = readSave();
+    const save = readSave(this.mapId);
     if (save && save.lines.some((line) => line.kinds.length > 0)) {
       this.rocks.restoreRemoved(save.blastedRocks);
       this.network.restore(save.lines);
@@ -211,8 +217,8 @@ export class Game {
       return;
     }
 
-    // Trecho inicial pronto saindo da estação de Pine Hollow, sem pedras no caminho.
-    this.rocks.blast(LINE_ORIGIN.x, LINE_ORIGIN.z, 32);
+    // Trecho inicial pronto saindo da estação, sem pedras no caminho.
+    this.rocks.blast(this.lineOrigin.x, this.lineOrigin.z, 32);
     for (const kind of ['straight', 'straight', 'straight'] as PieceKind[]) {
       this.network.place(kind);
     }
@@ -221,6 +227,7 @@ export class Game {
   private save(): void {
     const ok = writeSave({
       version: 2,
+      mapId: this.mapId,
       lines: this.network.serialize(),
       buildings: this.buildings.map((b): SavedBuilding => ({
         kind: b.kind, x: b.x, z: b.z, rot: b.rot,
@@ -234,7 +241,7 @@ export class Game {
       coins: this.economy.coins,
       score: this.economy.score,
       xp: this.economy.xp,
-    });
+    }, this.mapId);
     this.hud.toast(ok ? 'Jogo salvo neste navegador.' : 'Não foi possível salvar aqui.');
   }
 
@@ -820,4 +827,13 @@ export class Game {
     });
     this.hud.minimap.update(this.trains.map((slot) => slot.train.headPosition));
   }
+}
+
+function hashString(value: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    h ^= value.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
 }

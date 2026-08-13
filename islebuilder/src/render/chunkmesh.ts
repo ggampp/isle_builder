@@ -103,10 +103,17 @@ export function buildLayerGeometry(
       const x1 = x0 + TILE_SIZE;
       const y1 = y0 + TILE_SIZE;
 
+      // Plano XZ (Y=0): lógico +Y (norte) → mundo −Z.
       const base = quadCount * 4;
-      positions.push(x0, y0, 0, x1, y0, 0, x1, y1, 0, x0, y1, 0);
+      positions.push(
+        x0, 0, -y0,
+        x1, 0, -y0,
+        x1, 0, -y1,
+        x0, 0, -y1,
+      );
       uvs.push(u0, v1, u1, v1, u1, v0, u0, v0);
-      indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+      // Winding para normal +Y (cima).
+      indices.push(base, base + 2, base + 1, base, base + 3, base + 2);
       if (options?.shoreWetness) {
         // Mesma ordem dos vértices de `positions`: (x0,y0) (x1,y0) (x1,y1) (x0,y1).
         wets.push(

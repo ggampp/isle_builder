@@ -129,14 +129,14 @@ export function buildScatter(keepOut: KeepOutCircle[] = []): ScatterWorld {
     return false;
   };
 
-  const rockGeo = new THREE.IcosahedronGeometry(1, 0);
+  const rockGeo = new THREE.IcosahedronGeometry(1, 1);
   rockGeo.translate(0, 0.35, 0);
-  const cactusGeo = new THREE.CylinderGeometry(0.32, 0.4, 2.4, 7);
-  cactusGeo.translate(0, 1.2, 0);
-  const bushGeo = new THREE.IcosahedronGeometry(0.7, 0);
-  bushGeo.translate(0, 0.4, 0);
-  const flowerGeo = new THREE.IcosahedronGeometry(0.3, 0);
-  flowerGeo.translate(0, 0.2, 0);
+  // cacto com braços — geometria única para InstancedMesh
+  const cactusGeo = buildCactusGeometry();
+  const bushGeo = new THREE.IcosahedronGeometry(0.75, 1);
+  bushGeo.translate(0, 0.42, 0);
+  const flowerGeo = new THREE.IcosahedronGeometry(0.32, 1);
+  flowerGeo.translate(0, 0.22, 0);
 
   const specs: ScatterSpec[] = [
     { count: 760, geometry: rockGeo, colors: ['#c05038', '#d97e4a', '#a63c2e', '#b5573c'],
@@ -205,12 +205,12 @@ function buildPineForest(
   const group = new THREE.Group();
   const target = 620;
 
-  const trunkGeo = new THREE.CylinderGeometry(0.16, 0.24, 1.6, 6);
-  trunkGeo.translate(0, 0.8, 0);
-  const crownGeo = new THREE.ConeGeometry(1.5, 3.2, 8);
-  crownGeo.translate(0, 2.9, 0);
-  const topGeo = new THREE.ConeGeometry(1.05, 2.4, 8);
-  topGeo.translate(0, 4.5, 0);
+  const trunkGeo = new THREE.CylinderGeometry(0.16, 0.26, 1.7, 10);
+  trunkGeo.translate(0, 0.85, 0);
+  const crownGeo = new THREE.ConeGeometry(1.55, 3.3, 10);
+  crownGeo.translate(0, 2.95, 0);
+  const topGeo = new THREE.ConeGeometry(1.1, 2.5, 10);
+  topGeo.translate(0, 4.65, 0);
 
   const trunks = new THREE.InstancedMesh(
     trunkGeo, new THREE.MeshLambertMaterial({ color: '#6b4a2f', flatShading: true }), target);
@@ -260,4 +260,46 @@ function buildPineForest(
     group.add(mesh);
   }
   return group;
+}
+
+/** Tronco + dois braços fundidos numa BufferGeometry. */
+function buildCactusGeometry(): THREE.BufferGeometry {
+  const trunk = new THREE.CylinderGeometry(0.32, 0.4, 2.5, 10);
+  trunk.translate(0, 1.25, 0);
+  const armL = new THREE.CylinderGeometry(0.16, 0.18, 0.9, 8);
+  armL.rotateZ(Math.PI / 2);
+  armL.translate(-0.55, 1.55, 0);
+  const tipL = new THREE.CylinderGeometry(0.14, 0.16, 0.55, 8);
+  tipL.translate(-0.95, 1.85, 0);
+  const armR = new THREE.CylinderGeometry(0.16, 0.18, 0.75, 8);
+  armR.rotateZ(-Math.PI / 2);
+  armR.translate(0.5, 1.9, 0);
+  const tipR = new THREE.CylinderGeometry(0.14, 0.16, 0.45, 8);
+  tipR.translate(0.85, 2.15, 0);
+
+  const parts = [trunk, armL, tipL, armR, tipR];
+  const positions: number[] = [];
+  const normals: number[] = [];
+  for (const part of parts) {
+    const pos = part.attributes.position;
+    const nor = part.attributes.normal;
+    const idx = part.index;
+    if (idx) {
+      for (let i = 0; i < idx.count; i++) {
+        const vi = idx.getX(i);
+        positions.push(pos.getX(vi), pos.getY(vi), pos.getZ(vi));
+        normals.push(nor.getX(vi), nor.getY(vi), nor.getZ(vi));
+      }
+    } else {
+      for (let i = 0; i < pos.count; i++) {
+        positions.push(pos.getX(i), pos.getY(i), pos.getZ(i));
+        normals.push(nor.getX(i), nor.getY(i), nor.getZ(i));
+      }
+    }
+    part.dispose();
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  return geo;
 }

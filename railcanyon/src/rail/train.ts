@@ -32,43 +32,85 @@ function box(w: number, h: number, d: number, color: string, x = 0, y = 0, z = 0
 }
 
 function addWheels(parent: THREE.Group, count: number, spread: number): void {
-  const geo = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 10);
-  geo.rotateX(Math.PI / 2);
-  const mat = lambert('#2b2b33');
+  const tire = new THREE.CylinderGeometry(0.52, 0.52, 0.28, 14);
+  tire.rotateX(Math.PI / 2);
+  const hub = new THREE.CylinderGeometry(0.22, 0.22, 0.32, 10);
+  hub.rotateX(Math.PI / 2);
+  const tireMat = lambert('#1e1e24');
+  const hubMat = lambert('#6a6a72');
   for (let i = 0; i < count; i++) {
     const x = count === 1 ? 0 : -spread / 2 + (spread * i) / (count - 1);
-    for (const side of [-0.85, 0.85]) {
-      const wheel = new THREE.Mesh(geo, mat);
-      wheel.position.set(x, 0.5, side);
+    for (const side of [-0.88, 0.88]) {
+      const wheel = new THREE.Mesh(tire, tireMat);
+      wheel.position.set(x, 0.52, side);
+      wheel.castShadow = true;
       parent.add(wheel);
+      const center = new THREE.Mesh(hub, hubMat);
+      center.position.set(x, 0.52, side);
+      parent.add(center);
     }
   }
 }
 
 function buildLocomotive(): THREE.Group {
   const g = new THREE.Group();
-  g.add(box(4.6, 1.5, 1.9, '#2f66c4', 0, 1.5));
-  g.add(box(1.9, 2.3, 2.1, '#274f96', -1.8, 2.0));
-  g.add(box(2.1, 0.5, 2.3, '#1d3a6e', -1.8, 3.25));
-  const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.45, 1.1, 8), lambert('#22232b'));
-  chimney.position.set(1.6, 2.7, 0);
+  // chassis
+  g.add(box(5.0, 0.35, 2.0, '#1d3a6e', 0, 0.85));
+  // caldeira
+  const boiler = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.85, 3.4, 14), lambert('#2f66c4'));
+  boiler.rotation.z = Math.PI / 2;
+  boiler.position.set(0.55, 1.85, 0);
+  boiler.castShadow = true;
+  g.add(boiler);
+  // anéis da caldeira
+  for (const x of [-0.4, 0.6, 1.6]) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.86, 0.05, 6, 16), lambert('#1d3a6e'));
+    ring.rotation.y = Math.PI / 2;
+    ring.position.set(x, 1.85, 0);
+    g.add(ring);
+  }
+  // cabine
+  g.add(box(2.0, 2.35, 2.15, '#274f96', -1.85, 2.05));
+  g.add(box(2.15, 0.35, 2.35, '#1d3a6e', -1.85, 3.35));
+  g.add(box(0.7, 0.55, 0.08, '#8fc6e8', -1.85, 2.5, 1.12));
+  g.add(box(0.08, 0.55, 0.7, '#8fc6e8', -2.9, 2.5, 0));
+  // chaminé + sino
+  const chimney = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.42, 1.25, 12), lambert('#22232b'));
+  chimney.position.set(1.75, 2.85, 0);
   chimney.castShadow = true;
   g.add(chimney);
-  g.add(box(0.9, 0.7, 1.4, '#e0a33c', 2.5, 1.2));
-  g.add(box(0.7, 0.6, 2.0, '#8a2f27', 2.9, 0.7));
-  addWheels(g, 3, 3.4);
+  g.add(box(0.55, 0.12, 0.55, '#3a3a42', 1.75, 3.5));
+  const bell = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), lambert('#e0a33c'));
+  bell.position.set(0.9, 2.75, 0);
+  g.add(bell);
+  // farol
+  g.add(box(0.35, 0.35, 0.35, '#f5d98a', 2.55, 2.15));
+  // cowcatcher
+  g.add(box(0.9, 0.55, 1.7, '#8a2f27', 2.85, 0.85));
+  g.add(box(0.55, 0.35, 1.9, '#6a2420', 3.15, 0.55));
+  // tanque de água / tender detail
+  g.add(box(1.1, 0.9, 1.6, '#e0a33c', 2.35, 1.35));
+  addWheels(g, 4, 3.8);
   return g;
 }
 
 function buildWagon(): THREE.Group {
   const g = new THREE.Group();
-  g.add(box(4.6, 0.4, 1.9, '#6b4a2f', 0, 1.0));
-  g.add(box(4.6, 1.1, 1.9, '#3a3a42', 0, 1.75));
-  const load = box(3.8, 0.5, 1.4, '#8a5a34', 0, 2.4);
+  g.add(box(4.7, 0.35, 2.0, '#5c4632', 0, 0.95));
+  g.add(box(4.7, 1.15, 2.0, '#3a3a42', 0, 1.7));
+  // ripas laterais
+  for (const z of [-1.05, 1.05]) {
+    for (let i = 0; i < 5; i++) {
+      g.add(box(0.12, 1.0, 0.08, '#6b4a2f', -1.8 + i * 0.9, 1.75, z));
+    }
+  }
+  g.add(box(4.5, 0.1, 0.1, '#8a5a34', 0, 2.35, -1.05));
+  g.add(box(4.5, 0.1, 0.1, '#8a5a34', 0, 2.35, 1.05));
+  const load = box(3.9, 0.55, 1.5, '#8a5a34', 0, 2.45);
   load.visible = false;
   load.name = 'load';
   g.add(load);
-  addWheels(g, 2, 3.0);
+  addWheels(g, 2, 3.1);
   return g;
 }
 

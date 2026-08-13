@@ -1,7 +1,9 @@
-/** Objetivos-tutorial encadeados, no espírito do card "Objective" do vídeo. */
+/** Objetivos-tutorial encadeados por mapa. */
+
+import type { ObjectiveDefData } from '../world/maps.ts';
+import { WORLD_MAPS } from '../world/maps.ts';
 
 export interface ObjectiveProgress {
-  /** Peças de trilho assentadas desde o início da partida. */
   piecesPlaced: number;
   connectedTowns: string[];
   contractsAccepted: number;
@@ -14,54 +16,42 @@ export interface ObjectiveDef {
   detail: string;
   reward: number;
   xp: number;
-  /** Fração concluída em [0,1]. */
   progress: (p: ObjectiveProgress) => number;
 }
 
-export const OBJECTIVES: ObjectiveDef[] = [
-  {
-    title: 'Estenda a linha',
-    detail: 'Escolha uma peça de trilho no painel Construir e assente 4 peças na ponta brilhante.',
-    reward: 400,
-    xp: 120,
-    progress: (p) => p.piecesPlaced / 4,
-  },
-  {
-    title: 'Ligue Canyon Town',
-    detail: 'Leve os trilhos até Canyon Town, a leste, para conectar a estação.',
-    reward: 900,
-    xp: 260,
-    progress: (p) => (p.connectedTowns.includes('canyon') ? 1 : 0),
-  },
-  {
-    title: 'Aceite um contrato',
-    detail: 'Abra Contratos no rodapé e aceite uma entrega de uma cidade conectada.',
-    reward: 300,
-    xp: 90,
-    progress: (p) => Math.min(1, p.contractsAccepted),
-  },
-  {
-    title: 'Entregue a carga',
-    detail: 'Deixe o trem circular: ele carrega e entrega sozinho ao parar nas estações.',
-    reward: 1200,
-    xp: 400,
-    progress: (p) => Math.min(1, p.contractsCompleted),
-  },
-  {
-    title: 'Levante uma vila',
-    detail: 'Construa 3 casas ou serviços perto da linha para valorizar a rede.',
-    reward: 700,
-    xp: 220,
-    progress: (p) => p.buildingsPlaced / 3,
-  },
-  {
-    title: 'Cruze o desfiladeiro',
-    detail: 'Estenda a linha sobre o rio — a ponte de cavalete nasce sozinha — e ligue Copper Creek.',
-    reward: 2500,
-    xp: 900,
-    progress: (p) => (p.connectedTowns.includes('copper') ? 1 : 0),
-  },
-];
+function compileGoal(goal: ObjectiveDefData['goal']): (p: ObjectiveProgress) => number {
+  switch (goal.type) {
+    case 'pieces':
+      return (p) => p.piecesPlaced / goal.count;
+    case 'connect':
+      return (p) => (p.connectedTowns.includes(goal.townId) ? 1 : 0);
+    case 'connectAny':
+      return (p) => (goal.townIds.some((id) => p.connectedTowns.includes(id)) ? 1 : 0);
+    case 'contractsAccepted':
+      return (p) => Math.min(1, p.contractsAccepted / goal.count);
+    case 'contractsCompleted':
+      return (p) => Math.min(1, p.contractsCompleted / goal.count);
+    case 'buildings':
+      return (p) => p.buildingsPlaced / goal.count;
+  }
+}
+
+function compileObjectives(data: readonly ObjectiveDefData[]): ObjectiveDef[] {
+  return data.map((o) => ({
+    title: o.title,
+    detail: o.detail,
+    reward: o.reward,
+    xp: o.xp,
+    progress: compileGoal(o.goal),
+  }));
+}
+
+/** Lista ativa — trocada por `setWorldObjectives`. */
+export let OBJECTIVES: ObjectiveDef[] = compileObjectives(WORLD_MAPS[0]!.objectives);
+
+export function setWorldObjectives(data: readonly ObjectiveDefData[]): void {
+  OBJECTIVES = compileObjectives(data);
+}
 
 export class ObjectiveTracker {
   index = 0;
@@ -70,7 +60,6 @@ export class ObjectiveTracker {
     return OBJECTIVES[this.index] ?? null;
   }
 
-  /** Avança se o objetivo atual foi cumprido; devolve o objetivo concluído. */
   check(progress: ObjectiveProgress): ObjectiveDef | null {
     const current = this.current;
     if (!current) return null;

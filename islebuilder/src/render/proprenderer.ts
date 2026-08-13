@@ -4,16 +4,25 @@ import { getPropDefinition } from '../props/catalog.ts';
 import type { PropMap } from '../props/propmap.ts';
 import { propSortY } from '../props/placement.ts';
 import type { PropAtlas } from './art/propsAtlas.ts';
-import { createPropSpriteMaterial, disposePropSpriteMaterial, propFeetWorld, propWorldSize } from './art/propSpriteUtils.ts';
+import {
+  createPropSpriteMaterial,
+  disposePropSpriteMaterial,
+  propFeetWorld,
+  propWorldSize,
+} from './art/propSpriteUtils.ts';
 import { Palette } from './art/palette.ts';
+import { toWorld3 } from '../core/world3d.ts';
+import { clonePropModel, hasPropModel } from './propModels.ts';
 
 interface PropMeshes {
   shadow: THREE.Mesh;
-  sprite: THREE.Mesh;
+  /** GLB root ou plane billboard. */
+  visual: THREE.Object3D;
+  isBillboard: boolean;
 }
 
 /**
- * Renders placed props with y-sort (renderOrder) and elliptical shadows.
+ * Props em 3D: GLB quando disponível; senão billboard vertical do atlas.
  */
 export class PropRenderer {
   readonly group = new THREE.Group();
@@ -32,7 +41,7 @@ export class PropRenderer {
       transparent: true,
       opacity: 0.35,
       depthWrite: false,
-      depthTest: false,
+      depthTest: true,
     });
   }
 
@@ -46,22 +55,22 @@ export class PropRenderer {
     this.rebuildAll();
   }
 
+  /** Billboard sprites olham para a câmera. */
+  faceCamera(camera: THREE.Camera): void {
+    for (const entry of this.meshes.values()) {
+      if (!entry.isBillboard) continue;
+      entry.visual.lookAt(camera.position);
+    }
+  }
+
   private rebuildAll(): void {
     for (const meshes of this.meshes.values()) {
-      this.group.remove(meshes.shadow, meshes.sprite);
+      this.group.remove(meshes.shadow, meshes.visual);
       meshes.shadow.geometry.dispose();
-      meshes.sprite.geometry.dispose();
-      disposePropSpriteMaterial(meshes.sprite.material as THREE.Material);
+      this.disposeVisual(meshes.visual, meshes.isBillboard);
     }
     this.meshes.clear();
 
-    // Mundo +Y é Norte (para cima na tela, mais longe da câmera). Props mais
-    // ao Sul (Y menor) devem desenhar por cima dos mais ao Norte quando os
-    // sprites se sobrepõem — por isso a ordenação é DEScendente por Y: quem
-    // tem Y maior (mais ao norte/longe) é desenhado primeiro (renderOrder
-    // menor), e quem tem Y menor (mais ao sul/perto) é desenhado por último
-    // (renderOrder maior, fica por cima). Achado invertido na validação da
-    // Sprint 05 — duas construções sobrepostas renderizavam na ordem errada.
     const sorted = [...this.propMap.all()].sort((a, b) => {
       const da = getPropDefinition(a.defId);
       const db = getPropDefinition(b.defId);
@@ -69,18 +78,24 @@ export class PropRenderer {
       return propSortY(db, b.tileY) - propSortY(da, a.tileY);
     });
 
-    // renderOrder é normalizado num intervalo FIXO [10, 11.9], independente
-    // de quantas props existem — um contador incremental sem teto (10, 11,
-    // 12, 13...) colidiria com o renderOrder fixo das entidades (12, ver
-    // entityrenderer.ts) e do preview de props (20, ver proppreviewrenderer.ts)
-    // assim que houvesse props suficientes (achado na validação da Sprint 05:
-    // com 17 props o renderOrder chegava a 27).
     const total = sorted.length;
     sorted.forEach((prop, i) => {
       const def = getPropDefinition(prop.defId);
       if (!def) return;
       const order = total > 1 ? 10 + (i / (total - 1)) * 1.9 : 10;
       this.createPropMeshes(prop, def, order);
+    });
+  }
+
+  private disposeVisual(visual: THREE.Object3D, isBillboard: boolean): void {
+    if (isBillboard && visual instanceof THREE.Mesh) {
+      visual.geometry.dispose();
+      disposePropSpriteMaterial(visual.material as THREE.Material);
+      return;
+    }
+    visual.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) return;
+      // Geometria compartilhada com o template — não dispose.
     });
   }
 
@@ -94,25 +109,44 @@ export class PropRenderer {
     const w = base.w * variation;
     const h = base.h * variation;
     const feet = propFeetWorld(def, prop.tileX, prop.tileY);
+    const ground = toWorld3(feet.x, feet.y, 0);
 
-    const spriteGeo = new THREE.PlaneGeometry(w, h);
+    let visual: THREE.Object3D;
+    let isBillboard = false;
 
-    const spriteMat = createPropSpriteMaterial(def, this.atlas);
-    const sprite = new THREE.Mesh(spriteGeo, spriteMat);
-    sprite.position.set(feet.x, feet.y + h * 0.5, 0.5);
-    if (prop.flip) sprite.scale.x = -1;
-    sprite.renderOrder = renderOrder;
+    if (hasPropModel(def.id)) {
+      const model = clonePropModel(def.id)!;
+      model.position.copy(ground);
+      model.scale.multiplyScalar(variation);
+      if (prop.flip) model.rotation.y = Math.PI;
+      model.traverse((obj) => {
+        if (obj instanceof THREE.Mesh) obj.renderOrder = renderOrder;
+      });
+      visual = model;
+    } else {
+      const spriteGeo = new THREE.PlaneGeometry(w, h);
+      const spriteMat = createPropSpriteMaterial(def, this.atlas, {
+        depthTest: true,
+        depthWrite: false,
+      });
+      const sprite = new THREE.Mesh(spriteGeo, spriteMat);
+      sprite.position.set(ground.x, ground.y + h * 0.5, ground.z);
+      if (prop.flip) sprite.scale.x = -1;
+      sprite.renderOrder = renderOrder;
+      sprite.userData.billboard = true;
+      visual = sprite;
+      isBillboard = true;
+    }
 
-    // Sombra proporcional à largura VISUAL do sprite (não ao footprint) — com
-    // sprites maiores que o footprint, a sombra antiga virava um risco minúsculo.
     const shadowW = w * def.shadowScale * 0.5;
     const shadowH = shadowW * 0.4;
     const shadowGeo = new THREE.PlaneGeometry(shadowW, shadowH);
+    shadowGeo.rotateX(-Math.PI / 2);
     const shadow = new THREE.Mesh(shadowGeo, this.shadowMaterial);
-    shadow.position.set(feet.x, feet.y + shadowH * 0.2, 0.2);
+    shadow.position.set(ground.x, 0.05, ground.z);
     shadow.renderOrder = renderOrder - 0.5;
 
-    this.group.add(shadow, sprite);
-    this.meshes.set(prop.uid, { shadow, sprite });
+    this.group.add(shadow, visual);
+    this.meshes.set(prop.uid, { shadow, visual, isBillboard });
   }
 }

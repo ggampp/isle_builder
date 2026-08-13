@@ -23,7 +23,7 @@ export function buildTrackMesh(path: TrackPath): THREE.Group {
   for (let s = 0; s <= path.totalLength; s += TIE_SPACING) stations.push(sampleAt(path, s));
 
   const ties = new THREE.InstancedMesh(
-    new THREE.BoxGeometry(0.62, 0.15, 2.4), TIE_MAT, stations.length);
+    new THREE.BoxGeometry(0.7, 0.18, 2.55), TIE_MAT, stations.length);
   const matrix = new THREE.Matrix4();
   const quat = new THREE.Quaternion();
   const one = new THREE.Vector3(1, 1, 1);
@@ -54,7 +54,7 @@ export function buildTrackMesh(path: TrackPath): THREE.Group {
     if (pts.length < 2) continue;
     const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
     const rail = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, Math.max(8, pts.length), 0.095, 5, false), RAIL_MAT);
+      new THREE.TubeGeometry(curve, Math.max(12, pts.length * 2), 0.11, 8, false), RAIL_MAT);
     rail.castShadow = true;
     group.add(rail);
   }
@@ -105,17 +105,34 @@ function buildTrestles(stations: { position: Vec3; tangent: Vec3 }[]): THREE.Gro
 
   if (legs.length > 0) {
     const legMesh = new THREE.InstancedMesh(
-      new THREE.BoxGeometry(0.34, 1, 0.34), TIMBER_MAT, legs.length);
+      new THREE.BoxGeometry(0.38, 1, 0.38), TIMBER_MAT, legs.length);
     legs.forEach((m, i) => legMesh.setMatrixAt(i, m));
     legMesh.castShadow = true;
     group.add(legMesh);
   }
   if (braces.length > 0) {
     const braceMesh = new THREE.InstancedMesh(
-      new THREE.BoxGeometry(1, 0.22, 0.22), TIMBER_MAT, braces.length);
+      new THREE.BoxGeometry(1, 0.2, 0.2), TIMBER_MAT, braces.length);
     braces.forEach((m, i) => braceMesh.setMatrixAt(i, m));
     braceMesh.castShadow = true;
     group.add(braceMesh);
+    // diagonais leves no cavalete
+    const diagMesh = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(1, 0.12, 0.12), TIMBER_MAT, braces.length);
+    const diagMat = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    braces.forEach((m, i) => {
+      diagMat.copy(m);
+      const pos = new THREE.Vector3();
+      const rot = new THREE.Quaternion();
+      const scl = new THREE.Vector3();
+      m.decompose(pos, rot, scl);
+      q.setFromAxisAngle(new THREE.Vector3(0, 0, 1), 0.55);
+      diagMat.compose(pos, rot.multiply(q), new THREE.Vector3(scl.x * 0.9, 1, 1));
+      diagMesh.setMatrixAt(i, diagMat);
+    });
+    diagMesh.castShadow = true;
+    group.add(diagMesh);
   }
   return group;
 }
@@ -146,7 +163,7 @@ export function buildPiecePreview(start: Pose, kind: PieceKind, valid: boolean):
 /** Anel pulsante marcando a ponta da linha (o "railhead" do vídeo). */
 export function createRailheadMarker(): THREE.Mesh {
   const mesh = new THREE.Mesh(
-    new THREE.TorusGeometry(2.1, 0.28, 8, 24),
+    new THREE.TorusGeometry(2.15, 0.26, 10, 32),
     new THREE.MeshBasicMaterial({ color: '#ffe066', transparent: true, opacity: 0.9 }),
   );
   mesh.rotation.x = -Math.PI / 2;
@@ -157,7 +174,7 @@ export function createRailheadMarker(): THREE.Mesh {
 /** Marcador do ponto onde um desvio nasce (agulha). */
 export function createJunctionMarker(): THREE.Mesh {
   const mesh = new THREE.Mesh(
-    new THREE.ConeGeometry(1.1, 2.2, 6),
+    new THREE.ConeGeometry(1.05, 2.3, 10),
     new THREE.MeshLambertMaterial({ color: '#e8bb56', flatShading: true }),
   );
   mesh.castShadow = true;
@@ -167,7 +184,7 @@ export function createJunctionMarker(): THREE.Mesh {
 /** Círculo de alcance da dinamite, verde quando há pedra para explodir. */
 export function createBlastPreview(radius: number): THREE.Mesh {
   const mesh = new THREE.Mesh(
-    new THREE.RingGeometry(radius - 0.5, radius, 32),
+    new THREE.RingGeometry(radius - 0.45, radius, 48),
     new THREE.MeshBasicMaterial({
       color: '#f2564a', transparent: true, opacity: 0.7,
       side: THREE.DoubleSide, depthWrite: false,

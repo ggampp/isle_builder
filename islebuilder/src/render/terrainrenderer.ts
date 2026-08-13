@@ -20,7 +20,8 @@ const TERRAIN_VERTEX = /* glsl */ `
     vUv = uv;
     vWet = aWet;
     vec4 worldPos = modelMatrix * vec4(position, 1.0);
-    vWorld = worldPos.xy;
+    // Plano lógico: x = world.x, y = -world.z
+    vWorld = vec2(worldPos.x, -worldPos.z);
     gl_Position = projectionMatrix * viewMatrix * worldPos;
   }
 `;
@@ -118,8 +119,9 @@ export class TerrainRenderer {
         uUseFillMap: { value: fillTexture ? 1 : 0 },
       },
       transparent: true,
-      depthTest: false,
+      depthTest: true,
       depthWrite: false,
+      side: THREE.DoubleSide,
     });
   }
 
@@ -238,7 +240,8 @@ export class TerrainRenderer {
 
     const pos = geometry.getAttribute('position');
     for (let i = 0; i < pos.count; i++) {
-      pos.setZ(i, -0.15);
+      // Sombra logo abaixo do deck (eixo Y = cima).
+      pos.setY(i, -0.12);
     }
     pos.needsUpdate = true;
 

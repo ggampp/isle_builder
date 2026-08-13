@@ -1,17 +1,17 @@
 import * as THREE from 'three';
+import { toWorld3 } from '../core/world3d.ts';
 
 const VERTEX_SHADER = /* glsl */ `
   varying vec2 vWorldPos;
 
   void main() {
     vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-    vWorldPos = worldPosition.xy;
+    // Lógico: x = world.x, y = -world.z
+    vWorldPos = vec2(worldPosition.x, -worldPosition.z);
     gl_Position = projectionMatrix * viewMatrix * worldPosition;
   }
 `;
 
-// Ruído de valor (hash-based) barato o suficiente para 2 octaves por pixel;
-// cria o "borbulhar" sutil da água profunda visto no vídeo de referência.
 const FRAGMENT_SHADER = /* glsl */ `
   precision highp float;
 
@@ -46,8 +46,6 @@ const FRAGMENT_SHADER = /* glsl */ `
     float waves = n1 * 0.65 + n2 * 0.35;
     float wavesSoft = 0.25 + waves * 0.5;
 
-    // Brilhos diagonais bem sutis na água profunda (glints), não mais uma listra
-    // contrastante — o objetivo é leitura de água clara/saturada, não um padrão óbvio.
     float angle = radians(-25.0);
     float diag = vWorldPos.x * cos(angle) - vWorldPos.y * sin(angle);
     float stripePhase = fract(diag * 0.01 - uTime * 0.03);
@@ -61,9 +59,7 @@ const FRAGMENT_SHADER = /* glsl */ `
 `;
 
 /**
- * Plano de oceano "infinito": reposicionado e redimensionado para sempre
- * cobrir o viewport atual, mas o shader avalia a cor em coordenadas de
- * mundo reais (vWorldPos) — o padrão permanece estável durante pan/zoom.
+ * Oceano no plano XZ (Y = -0.05), segue o look-at lógico da câmera.
  */
 export class Ocean {
   readonly mesh: THREE.Mesh;
@@ -72,31 +68,32 @@ export class Ocean {
 
   constructor() {
     const geometry = new THREE.PlaneGeometry(1, 1);
+    geometry.rotateX(-Math.PI / 2);
     this.material = new THREE.ShaderMaterial({
       vertexShader: VERTEX_SHADER,
       fragmentShader: FRAGMENT_SHADER,
       uniforms: {
         uTime: { value: 0 },
-        // Tuned to blend with CoastRenderer's shallow-water ring (#4ecdc4 → #2a9d8f)
-        // instead of the previous near-black navy, per assets/status/jogo_exemplo.png.
         uColorBase: { value: new THREE.Color('#4fb8c9') },
         uColorDeep: { value: new THREE.Color('#1f7a95') },
       },
       depthWrite: false,
-      depthTest: false,
+      depthTest: true,
     });
     this.mesh = new THREE.Mesh(geometry, this.material);
-    this.mesh.position.z = -10;
+    this.mesh.position.y = -0.05;
     this.mesh.renderOrder = -1;
+    this.mesh.receiveShadow = true;
   }
 
   update(dt: number, cameraX: number, cameraY: number, halfViewWidth: number, halfViewHeight: number): void {
     this.time += dt;
     this.material.uniforms['uTime'].value = this.time;
 
-    const coverageMargin = 1.5;
-    this.mesh.scale.set(halfViewWidth * 2 * coverageMargin, halfViewHeight * 2 * coverageMargin, 1);
-    this.mesh.position.x = cameraX;
-    this.mesh.position.y = cameraY;
+    const coverageMargin = 2.2;
+    const size = Math.max(halfViewWidth, halfViewHeight) * 2 * coverageMargin;
+    this.mesh.scale.set(size, 1, size);
+    const p = toWorld3(cameraX, cameraY, -0.05);
+    this.mesh.position.set(p.x, p.y, p.z);
   }
 }

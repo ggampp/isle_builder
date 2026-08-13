@@ -16,8 +16,8 @@ export interface Contract {
   accepted: boolean;
 }
 
-export const MAX_ACCEPTED = 3;
-const OFFER_SLOTS = 3;
+export const MAX_ACCEPTED = 5;
+const OFFER_SLOTS = 5;
 
 function makeRng(seed: number): () => number {
   let a = seed >>> 0;
@@ -48,7 +48,10 @@ export class ContractBoard {
     const pool = TOWNS.filter((t) => connectedTownIds.includes(t.id));
     this.offers = this.offers.filter((o) => connectedTownIds.includes(o.townId));
     while (this.offers.length < OFFER_SLOTS && pool.length > 0) {
-      const town = pool[Math.floor(this.rng() * pool.length)];
+      // Prioriza cidades ainda sem oferta no quadro (mais cidades = mais contratos).
+      const unused = pool.filter((t) => !this.offers.some((o) => o.townId === t.id));
+      const pickFrom = unused.length > 0 ? unused : pool;
+      const town = pickFrom[Math.floor(this.rng() * pickFrom.length)]!;
       const amount = 18 + Math.floor(this.rng() * 5) * 12 + level * 6;
       const reward = Math.round(amount * (26 + this.rng() * 12) + level * 120);
       this.offers.push({

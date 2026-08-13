@@ -70,22 +70,33 @@ export function createBuilding(kind: BuildingKind, variant = 0): THREE.Group {
 
   switch (kind) {
     case 'cottage':
-      g.add(box(4, 2.6, 3.4, wall));
-      g.add(roof(3.2, 1.5, 2.8, tile, 2.6));
-      g.add(box(0.8, 1.4, 0.15, '#6b4a2f', 0, 0, 1.75));
+      g.add(box(4.3, 0.25, 3.6, '#9a8a78', 0, 0));
+      g.add(box(4.1, 2.55, 3.4, wall, 0, 0.25));
+      g.add(roof(3.3, 1.55, 2.9, tile, 2.8));
+      g.add(box(0.9, 1.5, 0.14, '#6b4a2f', 0, 0.3, 1.78));
+      g.add(box(0.95, 0.95, 0.1, '#8fc6e8', -1.2, 1.4, 1.75));
+      g.add(box(0.95, 0.95, 0.1, '#8fc6e8', 1.2, 1.4, 1.75));
+      g.add(box(0.45, 1.0, 0.45, tile, -1.3, 2.8, -0.6));
       break;
     case 'house':
-      g.add(box(5.4, 3.2, 4, wall));
-      g.add(roof(4, 1.8, 3.2, tile, 3.2));
-      g.add(box(1, 1.8, 0.15, '#6b4a2f', -1.2, 0, 2.05));
-      g.add(box(1.1, 1.1, 0.15, '#8fc6e8', 1.2, 1.2, 2.05));
+      g.add(box(5.7, 0.28, 4.3, '#9a8a78', 0, 0));
+      g.add(box(5.5, 3.15, 4.1, wall, 0, 0.28));
+      g.add(roof(4.2, 1.85, 3.4, tile, 3.4));
+      g.add(box(1.05, 1.9, 0.14, '#6b4a2f', -1.3, 0.35, 2.12));
+      g.add(box(1.1, 1.1, 0.1, '#8fc6e8', 1.35, 1.55, 2.1));
+      g.add(box(0.1, 1.0, 1.0, '#8fc6e8', 2.8, 1.55, 0));
+      g.add(box(0.5, 1.3, 0.5, tile, 1.8, 3.4, -0.8));
       break;
     case 'manor':
-      g.add(box(7, 3.4, 5, wall));
-      g.add(box(3.4, 2.4, 4.6, wall, 1.6, 3.4));
-      g.add(roof(5.2, 2, 3.9, tile, 3.4));
-      g.add(box(0.9, 2.4, 0.9, '#b5432f', -2.4, 3.4));
-      g.add(box(1.2, 2, 0.15, '#6b4a2f', -1.8, 0, 2.55));
+      g.add(box(7.3, 0.3, 5.3, '#9a8a78', 0, 0));
+      g.add(box(7.1, 3.4, 5.1, wall, 0, 0.3));
+      g.add(box(3.5, 2.5, 4.7, wall, 1.65, 3.7));
+      g.add(roof(5.3, 2.05, 4.0, tile, 3.7));
+      g.add(roof(2.8, 1.3, 2.4, tile, 6.2));
+      g.add(box(1.0, 2.6, 1.0, '#b5432f', -2.55, 3.7));
+      g.add(box(1.3, 2.1, 0.15, '#6b4a2f', -1.85, 0.35, 2.62));
+      g.add(box(1.1, 1.15, 0.1, '#8fc6e8', 0.6, 1.7, 2.6));
+      g.add(box(1.1, 1.15, 0.1, '#8fc6e8', 2.2, 1.7, 2.6));
       break;
     case 'cabin': {
       const logs = new THREE.Group();

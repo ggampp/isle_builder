@@ -12,7 +12,11 @@
     "assets:pipeline": "node scripts/run_pipeline.mjs",
     "assets:stitch": "node scripts/stitch_atlases.mjs",
     "assets:reprocess": "node scripts/reprocess_from_raw.mjs",
-    "assets:regen": "node scripts/regen_props_subset.mjs"
+    "assets:regen": "node scripts/regen_props_subset.mjs",
+    "assets:prop3d": "node scripts/prop3d/run_prop3d.mjs",
+    "assets:prop3d:all": "node scripts/prop3d/run_prop3d.mjs --all --glb-only",
+    "assets:prop3d:palm": "node scripts/prop3d/run_prop3d.mjs tree_palm --stitch",
+    "assets:entity3d": "node scripts/entity3d/run_entity3d.mjs"
   },
   "dependencies": {
     "jimp": "^0.22.12",

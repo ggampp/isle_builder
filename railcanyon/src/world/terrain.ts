@@ -10,7 +10,7 @@ const COL_BED = new THREE.Color('#d89a63');
 
 /** Malha do terreno low-poly: geometria não indexada com cor por face. */
 export function buildTerrain(): THREE.Mesh {
-  const segments = 220;
+  const segments = 280;
   let geo: THREE.BufferGeometry = new THREE.PlaneGeometry(
     WORLD_SIZE, WORLD_SIZE, segments, segments);
   geo.rotateX(-Math.PI / 2);
@@ -69,7 +69,7 @@ function faceColor(x: number, y: number, z: number, out: THREE.Color): void {
 
 /** Plano d'água turquesa — só aparece no vale cavado do rio. */
 export function buildWater(): THREE.Mesh {
-  const geo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, 1, 1);
+  const geo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, 48, 48);
   geo.rotateX(-Math.PI / 2);
   const mat = new THREE.MeshLambertMaterial({
     color: '#5fd3c8',
@@ -78,5 +78,6 @@ export function buildWater(): THREE.Mesh {
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.position.y = WATER_LEVEL;
+  mesh.receiveShadow = true;
   return mesh;
 }
