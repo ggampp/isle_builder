@@ -1,12 +1,13 @@
 name: Deploy games to GitHub Pages
 
-# Publica a sala de jogos e os cinco jogos do repositório:
+# Publica a sala de jogos e os jogos do repositório:
 #   /                → página de seleção (landing/)
 #   /isle-builder/   → Isle Builder (islebuilder/)
 #   /canyon-rails/   → Canyon Rails (railcanyon/)
 #   /prisma/         → Prisma (prisma/)
 #   /splinter/       → Splinter (splinter/)
 #   /glint/          → Glint (glint/)
+#   /voxel-forge/    → Voxel Forge (voxelforge/ — HTML único)
 # Requer Pages habilitado em Settings → Pages → Source: GitHub Actions.
 
 on:
@@ -84,16 +85,17 @@ jobs:
           npm run test
           npx vite build --base="/${GITHUB_REPOSITORY#*/}/glint/"
 
-      - name: Montar o site (landing + os cinco jogos)
+      - name: Montar o site (landing + jogos + forja)
         run: |
           rm -rf site
-          mkdir -p site/isle-builder site/canyon-rails site/prisma site/splinter site/glint
+          mkdir -p site/isle-builder site/canyon-rails site/prisma site/splinter site/glint site/voxel-forge
           cp -r landing/. site/
           cp -r islebuilder/dist/. site/isle-builder/
           cp -r railcanyon/dist/. site/canyon-rails/
           cp -r prisma/dist/. site/prisma/
           cp -r splinter/dist/. site/splinter/
           cp -r glint/dist/. site/glint/
+          cp voxelforge/index.html site/voxel-forge/index.html
 
       - uses: actions/upload-pages-artifact@v3
         with:

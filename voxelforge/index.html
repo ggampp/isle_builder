@@ -1,0 +1,1525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voxel Forge — Melee Weapon Generator</title>
+  <meta name="description" content="Interchangeable voxel melee weapons: blades, heads, shafts, guards, hilts, pommels, rails, and accents — every cube physically attached." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%2312141a'/><rect x='7' y='1' width='2' height='10' fill='%23c5d0dc'/><rect x='4' y='10' width='8' height='2' fill='%23e8b84a'/><rect x='6' y='12' width='4' height='3' fill='%238b5a32'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+  <style>
+    :root {
+      --bg: #0a0b0e;
+      --bg-2: #101218;
+      --panel: #14171e;
+      --panel-2: #1b1f29;
+      --line: #2c3344;
+      --line-2: #3d4660;
+      --text: #ece7dc;
+      --muted: #9a9488;
+      --ember: #ff6a2a;
+      --ember-2: #ff9a4a;
+      --gold: #e8b84a;
+      --gold-2: #f0d48a;
+      --steel: #9aa8b8;
+      --danger: #e85d5d;
+      --ok: #7dce8a;
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+      --radius: 14px;
+      --font: "Barlow", "Segoe UI", sans-serif;
+      --display: "Cinzel", "Palatino Linotype", serif;
+      --focus: 0 0 0 3px rgba(232, 184, 74, 0.55);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
+    body { min-height: 100dvh; }
+    button, select { font-family: inherit; }
+    button { cursor: pointer; }
+    button:focus-visible, select:focus-visible, a:focus-visible {
+      outline: none; box-shadow: var(--focus);
+    }
+    #app {
+      display: grid;
+      grid-template-columns: minmax(280px, 340px) 1fr minmax(280px, 340px);
+      grid-template-rows: auto 1fr;
+      grid-template-areas:
+        "top top top"
+        "left view right";
+      height: 100dvh;
+      background:
+        radial-gradient(1200px 600px at 50% 0%, rgba(255, 106, 42, 0.08), transparent 55%),
+        var(--bg);
+    }
+    header {
+      grid-area: top;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #161a22, #10131a);
+      z-index: 4;
+    }
+    .brand { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+    .mark {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(160deg, var(--ember), #7a2208);
+      display: grid; place-items: center;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.15), 0 6px 16px rgba(255,106,42,0.35);
+    }
+    .mark svg { width: 22px; height: 22px; }
+    .brand h1 {
+      margin: 0; font-family: var(--display); font-size: 1.05rem; letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .brand p { margin: 0.1rem 0 0; color: var(--muted); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .weapon-title { flex: 1; min-width: 0; text-align: center; }
+    .weapon-title strong {
+      display: block; font-family: var(--display); font-size: clamp(0.95rem, 1.6vw, 1.25rem);
+      color: var(--gold-2); letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .weapon-title span { color: var(--muted); font-size: 0.78rem; }
+    .actions { display: flex; gap: 0.45rem; flex-wrap: wrap; justify-content: flex-end; }
+    .btn {
+      min-height: 44px; padding: 0 0.9rem; border-radius: 10px;
+      border: 1px solid var(--line-2); background: var(--panel-2); color: var(--text);
+      font-weight: 600; font-size: 0.82rem; letter-spacing: 0.04em; text-transform: uppercase;
+      transition: background 180ms ease, transform 150ms ease, border-color 180ms ease;
+    }
+    .btn:hover { background: #242a38; border-color: var(--gold); }
+    .btn:active { transform: translateY(1px); }
+    .btn.primary {
+      background: linear-gradient(180deg, var(--ember-2), var(--ember));
+      border-color: #ffb07a; color: #2a1008;
+    }
+    .btn.primary:hover { filter: brightness(1.08); }
+    .btn.ghost { background: transparent; }
+    .panel {
+      overflow: auto; padding: 0.9rem 0.9rem 2rem;
+      background: rgba(16, 18, 24, 0.92);
+      border-right: 1px solid var(--line);
+      scrollbar-width: thin; scrollbar-color: var(--line-2) transparent;
+    }
+    #parts-panel { grid-area: left; }
+    #style-panel { grid-area: right; border-right: 0; border-left: 1px solid var(--line); }
+    #viewport {
+      grid-area: view; position: relative; overflow: hidden;
+      background:
+        radial-gradient(ellipse at 50% 80%, rgba(232, 184, 74, 0.08), transparent 50%),
+        linear-gradient(180deg, #151821 0%, #0b0c10 100%);
+    }
+    #viewport canvas { display: block; width: 100%; height: 100%; }
+    .hud {
+      position: absolute; left: 1rem; bottom: 1rem; z-index: 3;
+      display: flex; gap: 0.5rem; flex-wrap: wrap; pointer-events: none;
+    }
+    .chip {
+      pointer-events: none;
+      background: rgba(20, 23, 30, 0.82); border: 1px solid var(--line);
+      padding: 0.35rem 0.6rem; border-radius: 999px; font-size: 0.75rem; color: var(--muted);
+      backdrop-filter: blur(8px);
+    }
+    .chip b { color: var(--text); font-weight: 600; }
+    .chip.ok b { color: var(--ok); }
+    .section { margin: 0 0 1.1rem; }
+    .section h2 {
+      margin: 0 0 0.65rem; font-family: var(--display); font-size: 0.78rem;
+      letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold);
+    }
+    .row {
+      display: grid; grid-template-columns: 1fr 44px 44px;
+      grid-template-areas: "label prev next" "sel sel sel";
+      gap: 0.35rem; align-items: center; margin: 0 0 0.55rem;
+    }
+    .row label { grid-area: label; font-size: 0.8rem; color: var(--muted); }
+    .row select {
+      grid-area: sel; min-height: 42px; width: 100%;
+      border-radius: 10px; border: 1px solid var(--line); background: var(--panel);
+      color: var(--text); padding: 0 0.7rem; font-size: 0.9rem;
+    }
+    .row .cycle.prev { grid-area: prev; }
+    .row .cycle.next { grid-area: next; }
+    .cycle {
+      min-width: 42px; min-height: 42px; border-radius: 10px;
+      border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+      font-size: 1.1rem; line-height: 1;
+    }
+    .cycle:hover { border-color: var(--gold); }
+    .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; }
+    .swatch {
+      min-height: 48px; border-radius: 10px; border: 2px solid transparent;
+      color: #fff; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em;
+      text-transform: uppercase; text-shadow: 0 1px 2px #000; padding: 0.2rem;
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+    .swatch[aria-pressed="true"] { border-color: var(--gold-2); box-shadow: 0 0 0 1px var(--gold); }
+    .mat-block { margin: 0 0 0.75rem; }
+    .mat-block p { margin: 0 0 0.35rem; font-size: 0.75rem; color: var(--muted); }
+    .hint { color: var(--muted); font-size: 0.75rem; line-height: 1.45; margin: 0.4rem 0 0; }
+    .toggle {
+      display: flex; align-items: center; gap: 0.55rem; min-height: 44px;
+      font-size: 0.85rem; color: var(--text);
+    }
+    .toggle input { width: 18px; height: 18px; accent-color: var(--ember); }
+    .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+    .toast {
+      position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%);
+      background: #1c2118; color: var(--ok); border: 1px solid #35603c;
+      padding: 0.55rem 0.9rem; border-radius: 10px; z-index: 20; font-size: 0.85rem;
+      opacity: 0; pointer-events: none; transition: opacity 200ms ease;
+    }
+    .toast.show { opacity: 1; }
+    @media (max-width: 1080px) {
+      #app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(42vh, 1fr) auto auto;
+        grid-template-areas: "top" "view" "left" "right";
+        height: auto; min-height: 100dvh;
+      }
+      #viewport { min-height: 46vh; }
+      .panel { max-height: none; border: 0; border-top: 1px solid var(--line); }
+      .weapon-title { display: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .btn { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="brand">
+        <div class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M4 20 L14 4 H17 L20 7 V10 L8 22 H4 Z"/><path d="M13 5 L19 11"/></svg>
+        </div>
+        <div>
+          <h1>Voxel Forge</h1>
+          <p>Melee generator</p>
+        </div>
+      </div>
+      <div class="weapon-title">
+        <strong id="weapon-name">Arming Sword</strong>
+        <span id="weapon-seed">seed 000000</span>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="btn-camera" type="button">Reset view</button>
+        <button class="btn" id="btn-shot" type="button">Screenshot</button>
+        <button class="btn" id="btn-copy" type="button">Copy seed</button>
+        <button class="btn primary" id="btn-forge" type="button">Forge random</button>
+      </div>
+    </header>
+    <aside class="panel" id="parts-panel"></aside>
+    <div id="viewport" role="img" aria-label="Generated voxel weapon">
+      <div class="hud">
+        <span class="chip">voxels <b id="stat-voxels">0</b></span>
+        <span class="chip ok">weld <b id="stat-weld">attached</b></span>
+        <span class="chip">size <b id="stat-size">0</b></span>
+      </div>
+    </div>
+    <aside class="panel" id="style-panel"></aside>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+    const DIRS = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+    const CORE = [-1, 0];
+
+    const MATERIALS = {
+      forgedSteel: { name: "Forged Steel", hi: 0xc5d0dc, mid: 0x7d8b99, lo: 0x4a5560, edge: 0xe8eef4, grain: "metal" },
+      darkIron: { name: "Dark Iron", hi: 0x6a6e78, mid: 0x3a3d46, lo: 0x1a1c22, edge: 0x8a90a0, grain: "metal" },
+      polishedSilver: { name: "Polished Silver", hi: 0xffffff, mid: 0xc8d2dc, lo: 0x8a96a4, edge: 0xf4f8fc, grain: "metal" },
+      huntingWood: { name: "Hunting Wood", hi: 0xd2a36a, mid: 0x8b5a32, lo: 0x4e3018, edge: 0xe2c08a, grain: "wood" },
+      carbonFiber: { name: "Carbon Fiber", hi: 0x4a4e58, mid: 0x1e2228, lo: 0x0a0c10, edge: 0x6a7380, grain: "carbon" },
+      bone: { name: "Bone", hi: 0xf4ead4, mid: 0xd4c4a4, lo: 0x9a8a6c, edge: 0xfff6e4, grain: "bone" },
+      ornateGold: { name: "Ornate Gold", hi: 0xffe08a, mid: 0xd4a430, lo: 0x7a5410, edge: 0xfff0b0, grain: "metal" },
+      bronze: { name: "Bronze", hi: 0xe0a060, mid: 0xa06838, lo: 0x5a3418, edge: 0xf0c080, grain: "metal" },
+      leather: { name: "Leather Wrap", hi: 0x8a4a32, mid: 0x5a2e20, lo: 0x301610, edge: 0xb06a48, grain: "wood" },
+    };
+
+    const BLADES = [
+      { id: "none", name: "No Blade", length: 0, width: 0, thick: 0, taper: 0, curve: 0, blades: 0 },
+      { id: "dagger", name: "Dagger", length: 12, width: 2, thick: 1, taper: 0.85, curve: 0, blades: 1 },
+      { id: "gladius", name: "Gladius", length: 16, width: 3, thick: 1, taper: 0.35, curve: 0, blades: 1 },
+      { id: "seax", name: "Seax", length: 18, width: 3, thick: 1, taper: 0.55, curve: 0.4, blades: 1 },
+      { id: "arming", name: "Arming Sword", length: 24, width: 3, thick: 1, taper: 0.7, curve: 0, blades: 1 },
+      { id: "longsword", name: "Longsword", length: 30, width: 3, thick: 1, taper: 0.75, curve: 0, blades: 1 },
+      { id: "bastard", name: "Bastard Sword", length: 32, width: 3, thick: 1, taper: 0.72, curve: 0, blades: 1 },
+      { id: "greatsword", name: "Greatsword", length: 38, width: 4, thick: 2, taper: 0.68, curve: 0, blades: 1 },
+      { id: "katana", name: "Katana", length: 28, width: 2, thick: 1, taper: 0.55, curve: 2.4, blades: 1 },
+      { id: "scimitar", name: "Scimitar", length: 24, width: 3, thick: 1, taper: 0.45, curve: 3.2, blades: 1 },
+      { id: "shamshir", name: "Shamshir", length: 26, width: 2, thick: 1, taper: 0.8, curve: 3.8, blades: 1 },
+      { id: "falchion", name: "Falchion", length: 22, width: 4, thick: 1, taper: 0.2, curve: 1.2, blades: 1 },
+      { id: "cleaver", name: "Cleaver", length: 16, width: 5, thick: 2, taper: 0.1, curve: 0, blades: 1 },
+      { id: "rapier", name: "Rapier", length: 32, width: 1, thick: 1, taper: 0.4, curve: 0, blades: 1 },
+      { id: "estoc", name: "Estoc", length: 34, width: 1, thick: 1, taper: 0.15, curve: 0, blades: 1 },
+      { id: "kris", name: "Kris", length: 20, width: 2, thick: 1, taper: 0.6, curve: 0, blades: 1, wave: 1.6 },
+      { id: "sawback", name: "Sawback", length: 22, width: 3, thick: 1, taper: 0.5, curve: 0, blades: 1 },
+      { id: "glaive", name: "Glaive Blade", length: 22, width: 4, thick: 1, taper: 0.55, curve: 1.6, blades: 1 },
+      { id: "partisan", name: "Partisan", length: 20, width: 4, thick: 1, taper: 0.5, curve: 0, blades: 1 },
+      { id: "double", name: "Twin Blades", length: 22, width: 2, thick: 1, taper: 0.7, curve: 0.4, blades: 2 },
+      { id: "triple", name: "Triple Blades", length: 20, width: 2, thick: 1, taper: 0.65, curve: 0, blades: 3 },
+      { id: "forked", name: "Forked Blade", length: 18, width: 3, thick: 1, taper: 0.4, curve: 0, blades: 1, fork: true },
+      { id: "trident", name: "Trident", length: 18, width: 4, thick: 1, taper: 0.2, curve: 0, blades: 1, tines: 3 },
+      { id: "ranseur", name: "Ranseur", length: 20, width: 4, thick: 1, taper: 0.35, curve: 0, blades: 1, tines: 3, wing: true },
+      { id: "needle", name: "Needle Spike", length: 26, width: 1, thick: 1, taper: 0.9, curve: 0, blades: 1 },
+    ];
+
+    const HEADS = [
+      { id: "none", name: "No Head" },
+      { id: "bearded", name: "Bearded Axe" },
+      { id: "broad", name: "Broad Axe" },
+      { id: "doublebit", name: "Double-Bit Axe" },
+      { id: "tomahawk", name: "Tomahawk" },
+      { id: "francisca", name: "Francisca" },
+      { id: "flanged", name: "Flanged Mace" },
+      { id: "ball", name: "Mace Sphere" },
+      { id: "morningstar", name: "Morningstar" },
+      { id: "warhammer", name: "Warhammer" },
+      { id: "maul", name: "Maul" },
+      { id: "pick", name: "War Pick" },
+      { id: "lucerne", name: "Lucerne Hammer" },
+      { id: "pollaxe", name: "Pollaxe" },
+      { id: "halberd", name: "Halberd Head" },
+      { id: "bardiche", name: "Bardiche" },
+      { id: "hammerblade", name: "Hammer + Blade" },
+      { id: "dualaxe", name: "Dual Axe Heads" },
+      { id: "spikes", name: "Spike Cluster" },
+      { id: "anvil", name: "Anvil Head" },
+      { id: "goedendag", name: "Goedendag" },
+    ];
+
+    const SHAFTS = [
+      { id: "none", name: "No Shaft", len: 0, taper: 0, style: "plain" },
+      { id: "short", name: "Short Haft", len: 10, taper: 0, style: "plain" },
+      { id: "medium", name: "Medium Shaft", len: 18, taper: 0.1, style: "plain" },
+      { id: "spear", name: "Spear Shaft", len: 28, taper: 0.15, style: "plain" },
+      { id: "pike", name: "Pike Shaft", len: 42, taper: 0.2, style: "plain" },
+      { id: "pole", name: "Polearm Shaft", len: 34, taper: 0.12, style: "banded" },
+      { id: "tapered", name: "Tapered Shaft", len: 26, taper: 0.45, style: "plain" },
+      { id: "banded", name: "Banded Shaft", len: 24, taper: 0.08, style: "banded" },
+      { id: "spiral", name: "Spiral-Wrap Shaft", len: 24, taper: 0.1, style: "spiral" },
+      { id: "hex", name: "Hex Shaft", len: 22, taper: 0, style: "hex" },
+      { id: "studded", name: "Studded Shaft", len: 20, taper: 0, style: "studded" },
+      { id: "split", name: "Laminated Shaft", len: 26, taper: 0.1, style: "split" },
+    ];
+
+    const HANDLES = [
+      { id: "wrapped", name: "Sword Wrap", len: 10, style: "wrap" },
+      { id: "twohand", name: "Two-Handed Grip", len: 16, style: "wrap" },
+      { id: "pistol", name: "Pistol Grip", len: 8, style: "pistol" },
+      { id: "swept", name: "Swept Pistol", len: 9, style: "pistol-sweep" },
+      { id: "axe", name: "Axe Oval", len: 11, style: "oval" },
+      { id: "ribbed", name: "Ribbed Grip", len: 10, style: "ribbed" },
+      { id: "bone", name: "Carved Bone", len: 10, style: "carved" },
+      { id: "wire", name: "Wire-Wrapped", len: 10, style: "wire" },
+      { id: "grooved", name: "Finger Grooves", len: 10, style: "grooves" },
+      { id: "hex", name: "Hex Handle", len: 9, style: "hex" },
+      { id: "stub", name: "Stub Grip", len: 6, style: "wrap" },
+      { id: "flared", name: "Flared Handle", len: 10, style: "flared" },
+      { id: "cord", name: "Cord Wrap", len: 11, style: "cord" },
+    ];
+
+    const GUARDS = [
+      { id: "none", name: "No Guard" },
+      { id: "simple", name: "Simple Cross" },
+      { id: "sguard", name: "S-Quillons" },
+      { id: "basket", name: "Basket Hilt" },
+      { id: "knuckle", name: "Knuckle Bow" },
+      { id: "swept", name: "Swept Hilt" },
+      { id: "tsuba", name: "Disk Tsuba" },
+      { id: "spiked", name: "Spiked Guard" },
+      { id: "winged", name: "Winged Guard" },
+      { id: "crescent", name: "Crescent" },
+      { id: "rings", name: "Side Rings" },
+      { id: "shell", name: "Shell Guard" },
+      { id: "cup", name: "Cup Hilt" },
+      { id: "baroque", name: "Ornate Baroque" },
+      { id: "collar", name: "Socket Collar" },
+      { id: "langet", name: "Langet Plate" },
+    ];
+
+    const POMMELS = [
+      { id: "round", name: "Round" },
+      { id: "disc", name: "Disc" },
+      { id: "wheel", name: "Wheel" },
+      { id: "spiked", name: "Spiked" },
+      { id: "skull", name: "Skull" },
+      { id: "gem", name: "Gem" },
+      { id: "ring", name: "Ring" },
+      { id: "cube", name: "Cube" },
+      { id: "fishtail", name: "Fishtail" },
+      { id: "scent", name: "Scent-Stopper" },
+      { id: "hawk", name: "Hawk Head" },
+      { id: "counterdisc", name: "Heavy Disc" },
+    ];
+
+    const COUNTERS = [
+      { id: "none", name: "None" },
+      { id: "butt", name: "Butt Cap" },
+      { id: "sphere", name: "Heavy Sphere" },
+      { id: "spike", name: "Butt Spike" },
+      { id: "ring", name: "Weighted Ring" },
+      { id: "tassel", name: "Tassel Block" },
+      { id: "dual", name: "Twin Weights" },
+      { id: "flanged", name: "Flanged Butt" },
+    ];
+
+    const TIPS = [
+      { id: "pointed", name: "Pointed" },
+      { id: "leaf", name: "Leaf" },
+      { id: "barbed", name: "Barbed" },
+      { id: "chisel", name: "Chisel" },
+      { id: "rounded", name: "Rounded" },
+      { id: "forked", name: "Forked Tip" },
+      { id: "spear", name: "Spear Point" },
+      { id: "clip", name: "Clip Point" },
+      { id: "needle", name: "Needle" },
+      { id: "crown", name: "Crown" },
+      { id: "harpoon", name: "Harpoon" },
+    ];
+
+    const EDGES = [
+      { id: "plain", name: "Plain Edge" },
+      { id: "serrated", name: "Serrated" },
+      { id: "hamon", name: "Hamon Line" },
+      { id: "hollow", name: "Hollow Grind" },
+      { id: "saw", name: "Saw Back" },
+      { id: "notched", name: "Notched" },
+      { id: "wave", name: "Wave Edge" },
+    ];
+
+    const RICASSO = [
+      { id: "none", name: "No Ricasso" },
+      { id: "short", name: "Short Ricasso" },
+      { id: "long", name: "Long Ricasso" },
+      { id: "spiked", name: "Spiked Ricasso" },
+      { id: "flared", name: "Flared Ricasso" },
+      { id: "notched", name: "Notched Ricasso" },
+      { id: "grooved", name: "Grooved Ricasso" },
+      { id: "ring", name: "Ricasso Ring" },
+    ];
+
+    const FULLERS = [
+      { id: "none", name: "No Fuller" },
+      { id: "single", name: "Single Fuller" },
+      { id: "double", name: "Double Fuller" },
+      { id: "triple", name: "Triple Fuller" },
+      { id: "wide", name: "Wide Fuller" },
+      { id: "short", name: "Short Fuller" },
+      { id: "offset", name: "Offset Fuller" },
+      { id: "blood", name: "Blood Groove" },
+    ];
+
+    const ATTACH = [
+      { id: "none", name: "None" },
+      { id: "spikes", name: "Spike Rail" },
+      { id: "chain", name: "Hanging Chain" },
+      { id: "banner", name: "Banner" },
+      { id: "rings", name: "Weighted Rings" },
+      { id: "xguard", name: "Ornamental Crossguard" },
+      { id: "sideblade", name: "Side Blade" },
+      { id: "hook", name: "Parrying Hook" },
+      { id: "trophy", name: "Trophy Skull" },
+      { id: "cord", name: "Wrapped Cord" },
+      { id: "wing", name: "Wing Plate" },
+      { id: "quillon", name: "Quillon Dagger" },
+      { id: "sidehammer", name: "Side Hammer" },
+      { id: "sawrail", name: "Saw Rail" },
+      { id: "beads", name: "Prayer Beads" },
+      { id: "lantern", name: "Lantern Hook" },
+      { id: "flail", name: "Flail Ball" },
+      { id: "ribbon", name: "Ribbon Streamers" },
+      { id: "barbs", name: "Barbed Wire" },
+      { id: "axepick", name: "Opposite Pick" },
+    ];
+
+    const PRESETS = [
+      { id: "oath", name: "Oathkeeper", blade: "arming", head: "none", shaft: "none", handle: "wrapped", guard: "simple", pommel: "wheel", counter: "none", tip: "pointed", edge: "plain", ricasso: "short", fuller: "single", a: "none", b: "none", c: "none" },
+      { id: "cleaver", name: "Hearthcleaver", blade: "none", head: "bearded", shaft: "short", handle: "axe", guard: "collar", pommel: "round", counter: "butt", tip: "pointed", edge: "plain", ricasso: "none", fuller: "none", a: "cord", b: "none", c: "none" },
+      { id: "boar", name: "Boar's Tooth", blade: "partisan", head: "none", shaft: "spear", handle: "wrapped", guard: "winged", pommel: "scent", counter: "spike", tip: "leaf", edge: "plain", ricasso: "flared", fuller: "single", a: "banner", b: "none", c: "none" },
+      { id: "bell", name: "Bell Ringer", blade: "none", head: "flanged", shaft: "medium", handle: "ribbed", guard: "collar", pommel: "counterdisc", counter: "sphere", tip: "pointed", edge: "plain", ricasso: "none", fuller: "none", a: "rings", b: "none", c: "none" },
+      { id: "fork", name: "Stormfork", blade: "trident", head: "none", shaft: "spear", handle: "cord", guard: "crescent", pommel: "ring", counter: "tassel", tip: "forked", edge: "plain", ricasso: "ring", fuller: "none", a: "chain", b: "ribbon", c: "none" },
+      { id: "hybrid", name: "Anvil Song", blade: "cleaver", head: "warhammer", shaft: "short", handle: "pistol", guard: "spiked", pommel: "spiked", counter: "none", tip: "chisel", edge: "serrated", ricasso: "spiked", fuller: "none", a: "sideblade", b: "spikes", c: "xguard" },
+    ];
+
+    function mulberry32(a) {
+      return function () {
+        a |= 0; a = a + 0x6d2b79f5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+    function pick(rng, list) { return list[Math.floor(rng() * list.length)]; }
+    function hexToRgb(hex) {
+      return { r: (hex >> 16) & 255, g: (hex >> 8) & 255, b: hex & 255 };
+    }
+    function mixRgb(a, b, t) {
+      return {
+        r: Math.round(a.r + (b.r - a.r) * t),
+        g: Math.round(a.g + (b.g - a.g) * t),
+        b: Math.round(a.b + (b.b - a.b) * t),
+      };
+    }
+    function byId(list, id) { return list.find((x) => x.id === id) || list[0]; }
+
+    class Grid {
+      constructor() { this.map = new Map(); }
+      key(x, y, z) { return x + "," + y + "," + z; }
+      set(x, y, z, rgb, finish, slot) {
+        const k = this.key(x, y, z);
+        this.map.set(k, { x, y, z, rgb, finish, slot });
+      }
+      has(x, y, z) { return this.map.has(this.key(x, y, z)); }
+      get(x, y, z) { return this.map.get(this.key(x, y, z)); }
+      values() { return this.map.values(); }
+    }
+
+    function palColor(matId, role, x, y, z) {
+      const m = MATERIALS[matId] || MATERIALS.forgedSteel;
+      let hex = m.mid;
+      if (role === "hi" || role === "edge") hex = role === "edge" ? m.edge : m.hi;
+      if (role === "lo") hex = m.lo;
+      if (m.grain === "wood") {
+        const g = (y * 3 + x + (z * 2)) % 7;
+        if (g === 0) hex = m.lo;
+        if (g === 3) hex = m.hi;
+      } else if (m.grain === "carbon") {
+        const weave = ((x + z) & 1) ^ ((y >> 1) & 1);
+        hex = weave ? m.lo : m.mid;
+        if ((x + 2 * y + z) % 5 === 0) hex = m.hi;
+      } else if (m.grain === "bone") {
+        if (Math.abs(x) + Math.abs(z) === 0) hex = m.lo;
+        else if ((x + y) % 4 === 0) hex = m.hi;
+      } else if (m.grain === "metal") {
+        if ((x + y + z) % 9 === 0) hex = m.hi;
+        if ((x * 3 + z) % 11 === 0) hex = m.lo;
+      }
+      return hexToRgb(hex);
+    }
+    function finishOf(matId) {
+      const g = (MATERIALS[matId] || MATERIALS.forgedSteel).grain;
+      return g === "wood" || g === "bone" ? "matte" : "metal";
+    }
+    function put(g, x, y, z, matId, role, slot) {
+      g.set(x, y, z, palColor(matId, role, x, y, z), finishOf(matId), slot);
+    }
+    function box(g, x0, y0, z0, x1, y1, z1, matId, role, slot) {
+      const xa = Math.min(x0, x1), xb = Math.max(x0, x1);
+      const ya = Math.min(y0, y1), yb = Math.max(y0, y1);
+      const za = Math.min(z0, z1), zb = Math.max(z0, z1);
+      for (let x = xa; x <= xb; x++)
+        for (let y = ya; y <= yb; y++)
+          for (let z = za; z <= zb; z++) put(g, x, y, z, matId, role, slot);
+    }
+    function coreCol(g, y0, y1, matId, slot, wide = false) {
+      const xs = wide ? [-1, 0, 1] : CORE;
+      const zs = wide ? [-1, 0, 1] : CORE;
+      for (let y = y0; y <= y1; y++)
+        for (const x of xs) for (const z of zs) put(g, x, y, z, matId, "mid", slot);
+    }
+
+    function putCounter(g, y0, spec, mat) {
+      if (spec.id === "none") return y0;
+      if (spec.id === "butt") { box(g, -2, y0, -2, 1, y0 + 1, 1, mat, "mid", "counter"); return y0 + 1; }
+      if (spec.id === "sphere") {
+        for (let x = -2; x <= 2; x++) for (let y = 0; y <= 4; y++) for (let z = -2; z <= 2; z++)
+          if (x * x + (y - 2) * (y - 2) + z * z <= 6) put(g, x, y0 + y, z, mat, "mid", "counter");
+        return y0 + 4;
+      }
+      if (spec.id === "spike") { coreCol(g, y0, y0 + 2, mat, "counter"); put(g, 0, y0 - 1, 0, mat, "edge", "counter"); put(g, -1, y0 - 1, 0, mat, "edge", "counter"); put(g, 0, y0 - 2, 0, mat, "hi", "counter"); return y0 + 2; }
+      if (spec.id === "ring") { box(g, -3, y0, -3, 2, y0, 2, mat, "lo", "counter"); box(g, -1, y0, -1, 0, y0, 0, mat, "mid", "counter"); return y0; }
+      if (spec.id === "tassel") {
+        box(g, -2, y0, -1, 1, y0 + 1, 0, mat, "mid", "counter");
+        for (let i = 1; i <= 5; i++) { put(g, -2, y0 - i, 0, mat, i % 2 ? "hi" : "lo", "counter"); put(g, 1, y0 - i, -1, mat, i % 2 ? "hi" : "lo", "counter"); }
+        return y0 + 1;
+      }
+      if (spec.id === "dual") { box(g, -4, y0, -1, -2, y0 + 2, 0, mat, "mid", "counter"); box(g, 1, y0, -1, 3, y0 + 2, 0, mat, "mid", "counter"); coreCol(g, y0, y0 + 2, mat, "counter"); return y0 + 2; }
+      box(g, -2, y0, -2, 1, y0 + 2, 1, mat, "mid", "counter");
+      put(g, -3, y0 + 1, -1, mat, "edge", "counter"); put(g, 2, y0 + 1, 0, mat, "edge", "counter");
+      return y0 + 2;
+    }
+
+    function putPommel(g, y0, spec, mat, accent) {
+      const y1 = y0 + 3;
+      coreCol(g, y0, y1, mat, "pommel");
+      if (spec.id === "round" || spec.id === "scent") {
+        for (let x = -2; x <= 1; x++) for (let z = -2; z <= 1; z++) for (let y = 0; y <= 3; y++)
+          if (Math.abs(x + 0.5) + Math.abs(z + 0.5) + Math.abs(y - 1.5) <= 3.2) put(g, x, y0 + y, z, mat, "mid", "pommel");
+      } else if (spec.id === "disc" || spec.id === "counterdisc") {
+        box(g, spec.id === "counterdisc" ? -3 : -2, y0, spec.id === "counterdisc" ? -3 : -2, spec.id === "counterdisc" ? 2 : 1, y0 + 1, spec.id === "counterdisc" ? 2 : 1, mat, "mid", "pommel");
+      } else if (spec.id === "wheel") {
+        box(g, -2, y0 + 1, -2, 1, y0 + 2, 1, mat, "mid", "pommel");
+        for (const [x, z] of [[-3, -1], [2, -1], [-1, -3], [-1, 2]]) put(g, x, y0 + 1, z, mat, "hi", "pommel");
+      } else if (spec.id === "spiked") {
+        box(g, -2, y0, -2, 1, y0 + 2, 1, mat, "mid", "pommel");
+        put(g, 0, y0 - 1, 0, mat, "edge", "pommel"); put(g, -3, y0 + 1, 0, mat, "edge", "pommel"); put(g, 2, y0 + 1, 0, mat, "edge", "pommel");
+      } else if (spec.id === "skull") {
+        box(g, -2, y0, -2, 1, y0 + 3, 1, mat, "hi", "pommel");
+        put(g, -2, y0 + 2, -2, "darkIron", "lo", "pommel");
+        put(g, 1, y0 + 2, -2, "darkIron", "lo", "pommel");
+        put(g, -1, y0 + 1, -2, mat, "lo", "pommel"); put(g, 0, y0 + 1, -2, mat, "lo", "pommel");
+      } else if (spec.id === "gem") {
+        box(g, -2, y0, -2, 1, y0 + 2, 1, mat, "mid", "pommel");
+        box(g, -1, y0 + 1, -1, 0, y0 + 3, 0, accent, "hi", "pommel");
+      } else if (spec.id === "ring") {
+        box(g, -2, y0, -2, 1, y0, 1, mat, "mid", "pommel");
+        box(g, -2, y0 - 3, -1, -2, y0, 0, mat, "lo", "pommel");
+        box(g, 1, y0 - 3, -1, 1, y0, 0, mat, "lo", "pommel");
+        box(g, -2, y0 - 3, -1, 1, y0 - 3, 0, mat, "lo", "pommel");
+      } else if (spec.id === "cube") box(g, -2, y0, -2, 1, y0 + 3, 1, mat, "mid", "pommel");
+      else if (spec.id === "fishtail") {
+        box(g, -1, y0 + 1, -1, 0, y0 + 3, 0, mat, "mid", "pommel");
+        box(g, -3, y0, -1, -2, y0 + 1, 0, mat, "mid", "pommel");
+        box(g, 1, y0, -1, 2, y0 + 1, 0, mat, "mid", "pommel");
+      } else if (spec.id === "hawk") {
+        box(g, -2, y0, -1, 1, y0 + 3, 1, mat, "mid", "pommel");
+        box(g, -1, y0 + 3, -2, 0, y0 + 4, -2, mat, "hi", "pommel");
+        put(g, 0, y0 + 4, -3, mat, "edge", "pommel");
+      }
+      return y1;
+    }
+
+    function putHandle(g, y0, spec, mat, accent) {
+      const h = spec.len;
+      const y1 = y0 + h - 1;
+      coreCol(g, y0, y1, mat, "handle");
+      if (spec.style === "pistol" || spec.style === "pistol-sweep") {
+        for (let i = 0; i < 8; i++) {
+          const drop = spec.style === "pistol-sweep" ? Math.floor(i * 0.7) : Math.floor(i * 0.45);
+          box(g, drop, y0 + i, -1, drop + 1, y0 + i, 0, mat, i % 3 === 0 ? "hi" : "mid", "handle");
+        }
+        box(g, 0, y0 + 4, -1, 2, y0 + 5, 0, mat, "lo", "handle");
+        return y1;
+      }
+      const wide = spec.style === "oval" || spec.style === "flared";
+      coreCol(g, y0, y1, mat, "handle", wide);
+      for (let y = y0; y <= y1; y++) {
+        if (spec.style === "wrap" || spec.style === "cord") {
+          const band = ((y + y0) % 3) === 0;
+          box(g, -2, y, -1, 1, y, 0, mat, band ? "hi" : "mid", "handle");
+        } else if (spec.style === "ribbed" && (y - y0) % 2 === 0) box(g, -2, y, -2, 1, y, 1, mat, "lo", "handle");
+        else if (spec.style === "wire" && (y - y0) % 2 === 0) {
+          put(g, -2, y, -1, accent, "hi", "handle"); put(g, 1, y, 0, accent, "hi", "handle");
+        } else if (spec.style === "grooves" && (y - y0) % 3 === 1) {
+          put(g, -2, y, 0, mat, "lo", "handle"); put(g, 1, y, -1, mat, "lo", "handle");
+        } else if (spec.style === "carved" && (y - y0) % 4 === 0) box(g, -2, y, -2, 1, y, 1, mat, "hi", "handle");
+        else if (spec.style === "hex") {
+          put(g, -2, y, 0, mat, "mid", "handle"); put(g, 1, y, 0, mat, "mid", "handle");
+          put(g, -1, y, -2, mat, "mid", "handle"); put(g, 0, y, 1, mat, "mid", "handle");
+        } else if (spec.style === "flared" && (y === y0 || y === y1)) box(g, -3, y, -2, 2, y, 1, mat, "lo", "handle");
+        else if (spec.style === "oval") box(g, -2, y, -1, 1, y, 1, mat, "mid", "handle");
+      }
+      return y1;
+    }
+
+    function putShaft(g, y0, spec, mat, accent) {
+      if (spec.id === "none" || spec.len <= 0) return y0;
+      const y1 = y0 + spec.len - 1;
+      for (let y = y0; y <= y1; y++) {
+        const t = (y - y0) / Math.max(1, spec.len - 1);
+        const shrink = spec.taper > 0.3 && t > 0.65;
+        const xs = shrink ? [0] : CORE;
+        const zs = shrink ? [0] : CORE;
+        for (const x of xs) for (const z of zs) put(g, x, y, z, mat, "mid", "shaft");
+        if (!shrink) {
+          if (spec.style === "banded" && (y - y0) % 5 === 0) box(g, -2, y, -2, 1, y, 1, accent, "mid", "shaft");
+          if (spec.style === "spiral") {
+            const a = (y - y0) % 4;
+            const spots = [[-2, -1], [0, -2], [1, 0], [-1, 1]];
+            put(g, spots[a][0], y, spots[a][1], mat, "hi", "shaft");
+          }
+          if (spec.style === "hex") {
+            put(g, -2, y, 0, mat, "mid", "shaft"); put(g, 1, y, -1, mat, "mid", "shaft");
+          }
+          if (spec.style === "studded" && (y - y0) % 3 === 0) {
+            put(g, -2, y, -1, accent, "edge", "shaft"); put(g, 1, y, 0, accent, "edge", "shaft");
+          }
+          if (spec.style === "split") put(g, -1, y, 0, mat, "lo", "shaft");
+        }
+      }
+      return y1;
+    }
+
+    function putGuard(g, y0, spec, mat, accent) {
+      coreCol(g, y0, y0 + 1, mat, "guard");
+      if (spec.id === "none") return y0 + 1;
+      const y = y0;
+      if (spec.id === "simple" || spec.id === "langet") {
+        box(g, -6, y, -1, 5, y + 1, 0, mat, "mid", "guard");
+        if (spec.id === "langet") { box(g, -2, y - 6, -1, -2, y, 0, mat, "lo", "guard"); box(g, 1, y - 6, -1, 1, y, 0, mat, "lo", "guard"); }
+      } else if (spec.id === "sguard") {
+        for (let i = 1; i <= 6; i++) { put(g, -i, y + (i > 3 ? 1 : 0), -1, mat, "mid", "guard"); put(g, i, y - (i > 3 ? 1 : 0), 0, mat, "mid", "guard"); }
+        coreCol(g, y, y + 1, mat, "guard");
+      } else if (spec.id === "basket" || spec.id === "swept") {
+        box(g, -5, y, -1, 4, y, 0, mat, "mid", "guard");
+        for (let i = 0; i < 7; i++) {
+          put(g, -4 + Math.floor(i / 2), y - i, -2, mat, "lo", "guard");
+          put(g, 3, y - Math.min(i, 5), 1, mat, "lo", "guard");
+        }
+        if (spec.id === "swept") for (let i = 1; i <= 5; i++) put(g, i, y + 1, -1, mat, "hi", "guard");
+      } else if (spec.id === "knuckle") {
+        box(g, -4, y, -1, 3, y, 0, mat, "mid", "guard");
+        for (let i = 0; i <= 8; i++) put(g, 3, y - i, 0, mat, "mid", "guard");
+        box(g, 1, y - 8, -1, 3, y - 8, 0, mat, "lo", "guard");
+      } else if (spec.id === "tsuba") box(g, -4, y, -4, 3, y, 3, mat, "mid", "guard");
+      else if (spec.id === "spiked") {
+        box(g, -5, y, -1, 4, y, 0, mat, "mid", "guard");
+        for (const x of [-6, -3, 0, 3, 5]) put(g, x, y + 1, 0, mat, "edge", "guard");
+      } else if (spec.id === "winged") {
+        for (let i = 0; i < 7; i++) {
+          box(g, -2 - i, y, -1, -2 - i, y + 1 + Math.floor(i / 3), 0, mat, "mid", "guard");
+          box(g, 1 + i, y, -1, 1 + i, y + 1 + Math.floor(i / 3), 0, mat, "mid", "guard");
+        }
+      } else if (spec.id === "crescent") {
+        for (let i = 0; i < 8; i++) {
+          put(g, -i, y + Math.floor(Math.sin(i / 3) * 2), 0, mat, "mid", "guard");
+          put(g, i, y + Math.floor(Math.sin(i / 3) * 2), -1, mat, "mid", "guard");
+        }
+        coreCol(g, y, y + 1, mat, "guard");
+      } else if (spec.id === "rings") {
+        box(g, -5, y, -1, 4, y, 0, mat, "mid", "guard");
+        for (const s of [-1, 1]) {
+          const ox = s * 6;
+          box(g, ox - 1, y - 2, -2, ox + 1, y + 2, 1, mat, "lo", "guard");
+        }
+      } else if (spec.id === "shell" || spec.id === "cup") {
+        box(g, -3, y, -3, 2, y + (spec.id === "cup" ? 2 : 0), 2, mat, "mid", "guard");
+        if (spec.id === "cup") box(g, -2, y - 2, -2, 1, y, 1, mat, "lo", "guard");
+      } else if (spec.id === "baroque") {
+        box(g, -6, y, -1, 5, y + 1, 0, mat, "mid", "guard");
+        for (const x of [-6, -4, -2, 1, 3, 5]) box(g, x, y + 1, -1, x, y + 3, 0, accent, "hi", "guard");
+        put(g, -7, y, 0, accent, "edge", "guard"); put(g, 6, y, -1, accent, "edge", "guard");
+      } else if (spec.id === "collar") box(g, -2, y, -2, 1, y + 2, 1, mat, "mid", "guard");
+      return y0 + 1;
+    }
+
+    function bladeWidthAt(spec, accents, i, L) {
+      const t = i / Math.max(1, L - 1);
+      let w = spec.width * (1 - spec.taper * t);
+      const rLen = accents.ricasso.id === "none" ? 0 : accents.ricasso.id === "long" ? 7 : accents.ricasso.id === "flared" ? 5 : 3;
+      if (i < rLen) w = spec.width + (accents.ricasso.id === "flared" ? 1 : 0);
+      const tipN = Math.max(4, Math.floor(L * 0.22));
+      const tipT = Math.max(0, (i - (L - tipN)) / tipN);
+      if (tipT > 0) {
+        const tip = accents.tip.id;
+        if (tip === "pointed" || tip === "spear" || tip === "needle") w *= 1 - tipT * (tip === "needle" ? 1 : 0.95);
+        if (tip === "leaf") w *= 1 - Math.abs(tipT - 0.35) * 1.4 + 0.25;
+        if (tip === "rounded") w = Math.max(1, w * (1 - tipT * 0.6));
+        if (tip === "chisel") w = Math.max(1.2, w * (1 - tipT * 0.4));
+        if (tip === "clip") w *= 1 - tipT * 0.7;
+        if (tip === "harpoon" || tip === "barbed") w = Math.max(w, spec.width * 0.7);
+      }
+      if (accents.edge.id === "wave") w += Math.sin(i * 0.9) * 0.7;
+      return Math.max(0.6, w);
+    }
+
+    function putBlade(g, y0, spec, accents, mat, accent) {
+      if (spec.id === "none" || spec.length <= 0) return y0;
+      const L = spec.length;
+      const blades = spec.blades || 1;
+      const zOffs = blades === 1 ? [0] : blades === 2 ? [-2, 2] : [-3, 0, 3];
+      const rLen = accents.ricasso.id === "none" ? 0 : accents.ricasso.id === "long" ? 7 : 4;
+      const fullerEnd = accents.fuller.id === "short" ? Math.floor(L * 0.45) : Math.floor(L * 0.72);
+      const fullerStart = rLen + 1;
+
+      for (const zOff of zOffs) {
+        for (let i = 0; i < L; i++) {
+          const t = i / Math.max(1, L - 1);
+          let curve = Math.round((spec.curve || 0) * t * t);
+          if (spec.wave) curve = Math.round(Math.sin(i * 0.55) * spec.wave);
+          const w = bladeWidthAt(spec, accents, i, L);
+          const wi = Math.round(w);
+          let thick = spec.thick;
+          if (accents.edge.id === "hollow") thick = Math.max(0, thick - 1);
+          const y = y0 + i;
+          for (let dx = -wi; dx <= wi; dx++) {
+            for (let dz = -thick; dz <= thick; dz++) {
+              if (spec.thick > 0 && wi > 0 && Math.abs(dx) / (wi + 0.01) + Math.abs(dz) / (thick + 1.01) > 1.05) continue;
+              let role = "mid";
+              const edgeish = Math.abs(dx) >= wi;
+              if (edgeish) role = accents.edge.id === "hamon" ? "edge" : "hi";
+              let skip = false;
+              if (accents.fuller.id !== "none" && i >= fullerStart && i <= fullerEnd && Math.abs(dz) === thick && thick > 0) {
+                const fx = accents.fuller.id === "offset" ? dx + 1 : dx;
+                if (accents.fuller.id === "wide" && Math.abs(fx) <= Math.max(1, wi - 1)) skip = true;
+                else if (accents.fuller.id === "single" && Math.abs(fx) <= 1) skip = true;
+                else if (accents.fuller.id === "double" && (Math.abs(fx) === 1 || Math.abs(fx) === 2)) skip = true;
+                else if (accents.fuller.id === "triple" && Math.abs(fx) <= 2) skip = true;
+                else if (accents.fuller.id === "blood" && fx === 0) skip = true;
+                else if (accents.fuller.id === "short" && Math.abs(fx) <= 1) skip = true;
+                else if (accents.fuller.id === "offset" && Math.abs(fx) <= 1) skip = true;
+              }
+              if (skip) continue;
+              put(g, curve + dx, y, zOff + dz, mat, role, "blade");
+            }
+          }
+          if (accents.edge.id === "serrated" && i % 2 === 0) put(g, curve + wi + 1, y, zOff, mat, "edge", "blade");
+          if (accents.edge.id === "saw" && i % 2 === 0) put(g, curve - wi - 1, y, zOff, mat, "edge", "blade");
+          if (accents.edge.id === "notched" && i % 5 === 0 && wi > 1) { /* leave gap by not adding extra */ }
+          if ((accents.tip.id === "barbed" || accents.tip.id === "harpoon") && i > L - 8 && i % 2 === 0) {
+            put(g, curve + wi + 1, y - 1, zOff, mat, "edge", "blade");
+          }
+        }
+        if (spec.fork || spec.tines) {
+          const tines = spec.tines || 2;
+          const top = y0 + L - 1;
+          for (let t = 0; t < tines; t++) {
+            const ox = Math.round((t - (tines - 1) / 2) * 3);
+            for (let k = 0; k < 8; k++) {
+              put(g, ox, top + k, zOff, mat, k > 5 ? "edge" : "mid", "blade");
+              if (spec.wing && k < 4) put(g, ox + (ox < 0 ? -1 : 1), top + k, zOff, mat, "lo", "blade");
+            }
+          }
+        }
+        if (accents.tip.id === "forked") {
+          const top = y0 + L - 1;
+          for (let k = 0; k < 6; k++) { put(g, -2, top + k, zOff, mat, "edge", "blade"); put(g, 2, top + k, zOff, mat, "edge", "blade"); }
+        }
+        if (accents.tip.id === "crown") {
+          const top = y0 + L;
+          for (const ox of [-2, 0, 2]) put(g, ox, top, zOff, mat, "edge", "blade");
+        }
+      }
+      if (blades > 1) {
+        const midZ0 = Math.min(...zOffs), midZ1 = Math.max(...zOffs);
+        box(g, -1, y0, midZ0, 0, y0 + 2, midZ1, mat, "lo", "blade");
+      }
+      if (accents.ricasso.id === "spiked") for (const x of [-4, 3]) put(g, x, y0 + 1, 0, mat, "edge", "blade");
+      if (accents.ricasso.id === "notched") { /* visual indent already from width */ }
+      if (accents.ricasso.id === "grooved") box(g, -1, y0, 1, 0, y0 + rLen, 1, mat, "lo", "blade");
+      if (accents.ricasso.id === "ring") box(g, -3, y0 + 1, -2, 2, y0 + 1, 1, accent, "mid", "blade");
+      coreCol(g, y0, y0 + 1, mat, "blade");
+      return y0 + L + (spec.tines || spec.fork || accents.tip.id === "forked" ? 8 : 0);
+    }
+
+    function putHead(g, yMount, spec, mat, accent) {
+      if (spec.id === "none") return yMount;
+      coreCol(g, yMount, yMount + 6, mat, "head");
+      const y = yMount;
+      const axeBit = (side, bearded, long = 9) => {
+        for (let i = 0; i < long; i++) {
+          const x = side * (2 + i);
+          let yLo = y + 1;
+          let yHi = y + 5 + (spec.id === "broad" ? 1 : 0);
+          if (bearded) yLo = y - 1 - Math.floor(i * 0.45);
+          if (spec.id === "francisca") { yLo = y + Math.floor(i * 0.2); yHi = y + 4 + Math.floor(i * 0.15); }
+          if (spec.id === "tomahawk") { yHi = y + 4; yLo = y + 1; long = 6; }
+          box(g, x, yLo, -1, x, yHi, 0, mat, i > long - 3 ? "edge" : "mid", "head");
+        }
+        box(g, side * 2, y, -1, side * 3, y + 6, 1, mat, "lo", "head");
+      };
+      if (spec.id === "bearded" || spec.id === "broad" || spec.id === "tomahawk" || spec.id === "francisca") axeBit(1, spec.id === "bearded" || spec.id === "francisca");
+      else if (spec.id === "doublebit" || spec.id === "dualaxe") { axeBit(1, spec.id === "dualaxe"); axeBit(-1, spec.id === "dualaxe"); }
+      else if (spec.id === "flanged") {
+        for (let a = 0; a < 8; a++) {
+          const ang = a * Math.PI / 4;
+          for (let r = 2; r <= 5; r++) put(g, Math.round(Math.cos(ang) * r), y + 3, Math.round(Math.sin(ang) * r), mat, r > 4 ? "edge" : "mid", "head");
+        }
+        box(g, -2, y, -2, 1, y + 6, 1, mat, "mid", "head");
+      } else if (spec.id === "ball" || spec.id === "morningstar" || spec.id === "spikes") {
+        for (let x = -3; x <= 2; x++) for (let yy = 0; yy <= 5; yy++) for (let z = -3; z <= 2; z++)
+          if ((x + 0.5) ** 2 + (yy - 2.5) ** 2 + (z + 0.5) ** 2 <= 10) put(g, x, y + yy, z, mat, "mid", "head");
+        if (spec.id !== "ball") {
+          for (const [dx, dy, dz] of [[4, 3, 0], [-5, 3, 0], [0, 7, 0], [0, 3, 4], [0, 3, -4], [3, 5, 3], [-3, 1, -3]])
+            put(g, dx, y + dy, dz, mat, "edge", "head");
+        }
+      } else if (spec.id === "warhammer" || spec.id === "maul" || spec.id === "lucerne" || spec.id === "hammerblade") {
+        const span = spec.id === "maul" ? 5 : 4;
+        box(g, 2, y + 1, -span + 2, 6, y + 5, span - 2, mat, "mid", "head");
+        if (spec.id !== "maul") box(g, -6, y + 2, -1, -2, y + 4, 0, mat, "edge", "head");
+        if (spec.id === "lucerne") { box(g, -1, y + 6, -1, 0, y + 12, 0, mat, "edge", "head"); put(g, 0, y + 13, 0, mat, "hi", "head"); }
+        if (spec.id === "hammerblade") for (let i = 0; i < 10; i++) box(g, -2 - i, y + 1, -1, -2 - i, y + 4, 0, mat, "hi", "head");
+      } else if (spec.id === "pick" || spec.id === "axepick") {
+        for (let i = 0; i < 8; i++) box(g, 2 + i, y + 2, -1, 2 + i, y + 4 - Math.floor(i / 4), 0, mat, "edge", "head");
+      } else if (spec.id === "halberd" || spec.id === "pollaxe") {
+        axeBit(1, false, 8);
+        box(g, -1, y + 6, -1, 0, y + 14, 0, mat, "edge", "head");
+        box(g, -5, y + 2, -1, -2, y + 3, 0, mat, "lo", "head");
+      } else if (spec.id === "bardiche") axeBit(1, true, 12);
+      else if (spec.id === "anvil") box(g, -4, y + 1, -3, 3, y + 5, 2, mat, "mid", "head");
+      else if (spec.id === "goedendag") {
+        box(g, -2, y, -2, 1, y + 4, 1, mat, "mid", "head");
+        box(g, -1, y + 4, -1, 0, y + 10, 0, mat, "edge", "head");
+      }
+      box(g, -2, y - 4, -1, -2, y, 0, mat, "lo", "head");
+      box(g, 1, y - 4, -1, 1, y, 0, mat, "lo", "head");
+      return y + 7;
+    }
+
+    function collectRails(g, yMin, yMax) {
+      const rails = [];
+      for (let y = yMin + 2; y <= yMax - 2; y += 3) {
+        let minX = 99, maxX = -99;
+        for (const v of g.values()) if (v.y === y) { minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x); }
+        if (minX < 90) {
+          rails.push({ x: minX, y, z: 0, dir: -1 });
+          rails.push({ x: maxX, y, z: 0, dir: 1 });
+        }
+      }
+      return rails;
+    }
+
+    function putAttach(g, rail, spec, mat, accent, cloth) {
+      if (spec.id === "none" || !rail) return;
+      const { x, y, z, dir } = rail;
+      const ox = x + dir;
+      put(g, ox, y, z, mat, "mid", "attach");
+      if (spec.id === "spikes") {
+        for (let i = 0; i < 6; i++) put(g, ox + dir * (1 + (i % 2)), y + i - 2, z, mat, "edge", "attach");
+      } else if (spec.id === "chain" || spec.id === "flail" || spec.id === "beads") {
+        let cx = ox, cy = y, cz = z;
+        const n = spec.id === "beads" ? 8 : 10;
+        for (let i = 1; i <= n; i++) {
+          cy -= 1;
+          put(g, cx, cy, cz, spec.id === "beads" ? accent : mat, i % 2 ? "hi" : "lo", "attach");
+          if (i % 2 === 0) {
+            cx += dir;
+            put(g, cx, cy, cz, spec.id === "beads" ? accent : mat, "mid", "attach");
+          }
+        }
+        if (spec.id === "flail") box(g, cx - 1, cy - 3, cz - 1, cx + 1, cy, cz + 1, mat, "mid", "attach");
+      } else if (spec.id === "banner" || spec.id === "ribbon") {
+        box(g, ox, y, z, ox, y + 10, z, mat, "mid", "attach");
+        const W = spec.id === "ribbon" ? 3 : 6;
+        for (let i = 0; i < 9; i++) for (let w = 1; w <= W; w++) {
+          put(g, ox + dir * w, y + 10 - i, z, cloth, (i + w) % 2 ? "hi" : "mid", "attach");
+          if (i % 3 === 0) put(g, ox + dir * w, y + 10 - i, z + dir, cloth, "lo", "attach");
+        }
+      } else if (spec.id === "rings") {
+        box(g, x - 2, y, z - 2, x + 2, y, z + 2, mat, "lo", "attach");
+        box(g, -1, y, -1, 0, y, 0, mat, "mid", "attach");
+      } else if (spec.id === "xguard") box(g, -7, y, -1, 6, y, 0, accent, "mid", "attach");
+      else if (spec.id === "sideblade") {
+        for (let i = 0; i < 8; i++) put(g, ox + dir * Math.floor(i / 3), y + i, z, mat, "edge", "attach");
+      } else if (spec.id === "hook") {
+        box(g, ox, y, z, ox + dir * 4, y, z, mat, "mid", "attach");
+        box(g, ox + dir * 4, y, z, ox + dir * 4, y - 3, z, mat, "edge", "attach");
+      } else if (spec.id === "trophy") {
+        box(g, ox, y, z - 1, ox + dir * 2, y + 3, z + 1, "bone", "hi", "attach");
+        put(g, ox + dir, y + 2, z - 1, "darkIron", "lo", "attach");
+      } else if (spec.id === "cord") {
+        for (let i = 0; i < 8; i++) put(g, ox, y + i - 3, z + (i % 2), "leather", "mid", "attach");
+      } else if (spec.id === "wing") {
+        for (let i = 0; i < 6; i++) box(g, ox + dir * i, y, z, ox + dir * i, y + 2 + i, z, mat, "mid", "attach");
+      } else if (spec.id === "quillon") {
+        box(g, ox, y - 5, z, ox + dir, y + 5, z, mat, "mid", "attach");
+      } else if (spec.id === "sidehammer") box(g, ox, y - 1, z - 1, ox + dir * 3, y + 2, z + 1, mat, "mid", "attach");
+      else if (spec.id === "sawrail") {
+        for (let i = 0; i < 10; i++) put(g, ox, y + i - 4, z, mat, i % 2 ? "edge" : "mid", "attach");
+      } else if (spec.id === "lantern") {
+        box(g, ox, y, z, ox, y - 4, z, mat, "lo", "attach");
+        box(g, ox - 1, y - 6, z - 1, ox + 1, y - 4, z + 1, accent, "hi", "attach");
+      } else if (spec.id === "barbs") {
+        for (let i = 0; i < 8; i++) {
+          put(g, ox, y + i - 3, z, mat, "lo", "attach");
+          put(g, ox + dir, y + i - 3, z, mat, "edge", "attach");
+        }
+      } else if (spec.id === "axepick") {
+        for (let i = 0; i < 7; i++) put(g, ox + dir * i, y, z, mat, "edge", "attach");
+      }
+    }
+
+    function weld(grid) {
+      const voxels = [...grid.values()];
+      if (!voxels.length) return { parts: 0, welds: 0 };
+      const start = voxels.reduce((a, b) => (a.y < b.y || (a.y === b.y && Math.abs(a.x) + Math.abs(a.z) < Math.abs(b.x) + Math.abs(b.z)) ? a : b));
+      const visited = new Set();
+      const stack = [start];
+      visited.add(grid.key(start.x, start.y, start.z));
+      while (stack.length) {
+        const v = stack.pop();
+        for (const [dx, dy, dz] of DIRS) {
+          const n = grid.get(v.x + dx, v.y + dy, v.z + dz);
+          if (n) {
+            const k = grid.key(n.x, n.y, n.z);
+            if (!visited.has(k)) { visited.add(k); stack.push(n); }
+          }
+        }
+      }
+      let welds = 0;
+      const leftover = voxels.filter((v) => !visited.has(grid.key(v.x, v.y, v.z)));
+      const remaining = new Set(leftover.map((v) => grid.key(v.x, v.y, v.z)));
+      while (remaining.size) {
+        const seedKey = remaining.values().next().value;
+        const [sx, sy, sz] = seedKey.split(",").map(Number);
+        const comp = [];
+        const q = [seedKey];
+        remaining.delete(seedKey);
+        while (q.length) {
+          const k = q.pop();
+          const [x, y, z] = k.split(",").map(Number);
+          comp.push({ x, y, z });
+          for (const [dx, dy, dz] of DIRS) {
+            const nk = grid.key(x + dx, y + dy, z + dz);
+            if (remaining.has(nk)) { remaining.delete(nk); q.push(nk); }
+          }
+        }
+        let bestD = 1e9, from = comp[0], to = start;
+        for (const c of comp) {
+          for (const k of visited) {
+            const [x, y, z] = k.split(",").map(Number);
+            const d = Math.abs(c.x - x) + Math.abs(c.y - y) + Math.abs(c.z - z);
+            if (d < bestD) { bestD = d; from = c; to = { x, y, z }; }
+          }
+        }
+        let x = from.x, y = from.y, z = from.z;
+        while (x !== to.x || y !== to.y || z !== to.z) {
+          if (x !== to.x) x += Math.sign(to.x - x);
+          else if (y !== to.y) y += Math.sign(to.y - y);
+          else z += Math.sign(to.z - z);
+          if (!grid.has(x, y, z)) {
+            put(grid, x, y, z, "forgedSteel", "lo", "weld");
+            welds++;
+          }
+          visited.add(grid.key(x, y, z));
+        }
+        for (const c of comp) visited.add(grid.key(c.x, c.y, c.z));
+      }
+      return { parts: 1, welds };
+    }
+
+    function buildWeapon(state) {
+      const g = new Grid();
+      const blade = byId(BLADES, state.blade);
+      const head = byId(HEADS, state.head);
+      const shaft = byId(SHAFTS, state.shaft);
+      const handle = byId(HANDLES, state.handle);
+      const guard = byId(GUARDS, state.guard);
+      const pommel = byId(POMMELS, state.pommel);
+      const counter = byId(COUNTERS, state.counter);
+      const accents = {
+        tip: byId(TIPS, state.tip),
+        edge: byId(EDGES, state.edge),
+        ricasso: byId(RICASSO, state.ricasso),
+        fuller: byId(FULLERS, state.fuller),
+      };
+      const M = state.mats;
+      let y = 0;
+      y = putCounter(g, y, counter, M.counter);
+      y = putPommel(g, y, pommel, M.pommel, M.accent);
+      const handleTop = putHandle(g, y, handle, M.handle, M.accent);
+      y = handleTop;
+      const shaftTop = putShaft(g, y, shaft, M.shaft, M.accent);
+      y = shaftTop;
+      y = putGuard(g, y, guard, M.guard, M.accent);
+      const headTop = putHead(g, y, head, M.head, M.accent);
+      const bladeBase = head.id === "none" ? y : Math.max(y, headTop - 2);
+      putBlade(g, bladeBase, blade, accents, M.blade, M.accent);
+      if (blade.id === "none" && head.id === "none") {
+        coreCol(g, y, y + 6, M.blade, "blade");
+        put(g, 0, y + 7, 0, M.blade, "edge", "blade");
+      }
+      const ys = [...g.values()].map((v) => v.y);
+      const yMin = Math.min(...ys), yMax = Math.max(...ys);
+      const rails = collectRails(g, yMin, yMax);
+      const picks = [state.a, state.b, state.c].map((id) => byId(ATTACH, id)).filter((s) => s.id !== "none");
+      picks.forEach((spec, i) => {
+        const rail = rails[Math.min(rails.length - 1, 2 + i * 4)] || rails[0] || { x: 1, y: Math.floor((yMin + yMax) / 2), z: 0, dir: 1 };
+        putAttach(g, rail, spec, M.attach, M.accent, M.accent);
+      });
+      const weldInfo = weld(g);
+      return { grid: g, weldInfo };
+    }
+
+    function meshFromGrid(grid) {
+      const metal = { pos: [], nor: [], col: [] };
+      const matte = { pos: [], nor: [], col: [] };
+      const faces = [
+        { n: [1, 0, 0], d: [1, 0, 0], c: [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]] },
+        { n: [-1, 0, 0], d: [-1, 0, 0], c: [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]] },
+        { n: [0, 1, 0], d: [0, 1, 0], c: [[0, 1, 0], [0, 1, 1], [1, 1, 1], [1, 1, 0]] },
+        { n: [0, -1, 0], d: [0, -1, 0], c: [[0, 0, 1], [0, 0, 0], [1, 0, 0], [1, 0, 1]] },
+        { n: [0, 0, 1], d: [0, 0, 1], c: [[0, 0, 1], [1, 0, 1], [1, 1, 1], [0, 1, 1]] },
+        { n: [0, 0, -1], d: [0, 0, -1], c: [[1, 0, 0], [0, 0, 0], [0, 1, 0], [1, 1, 0]] },
+      ];
+      let minX = Infinity, minY = Infinity, minZ = Infinity, maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+      const voxels = [...grid.values()];
+      for (const v of voxels) {
+        minX = Math.min(minX, v.x); maxX = Math.max(maxX, v.x);
+        minY = Math.min(minY, v.y); maxY = Math.max(maxY, v.y);
+        minZ = Math.min(minZ, v.z); maxZ = Math.max(maxZ, v.z);
+      }
+      const cx = (minX + maxX + 1) / 2;
+      const cz = (minZ + maxZ + 1) / 2;
+      for (const v of voxels) {
+        let occ = 0;
+        for (const [dx, dy, dz] of DIRS) if (grid.has(v.x + dx, v.y + dy, v.z + dz)) occ++;
+        const ao = 1 - occ * 0.055;
+        const buf = v.finish === "matte" ? matte : metal;
+        for (const f of faces) {
+          if (grid.has(v.x + f.d[0], v.y + f.d[1], v.z + f.d[2])) continue;
+          const idx = [0, 1, 2, 0, 2, 3];
+          for (const i of idx) {
+            const c = f.c[i];
+            buf.pos.push(v.x + c[0] - cx, v.y + c[1] - minY, v.z + c[2] - cz);
+            buf.nor.push(f.n[0], f.n[1], f.n[2]);
+            buf.col.push((v.rgb.r / 255) * ao, (v.rgb.g / 255) * ao, (v.rgb.b / 255) * ao);
+          }
+        }
+      }
+      const make = (buf, metalness, roughness) => {
+        if (!buf.pos.length) return null;
+        const geo = new THREE.BufferGeometry();
+        geo.setAttribute("position", new THREE.Float32BufferAttribute(buf.pos, 3));
+        geo.setAttribute("normal", new THREE.Float32BufferAttribute(buf.nor, 3));
+        geo.setAttribute("color", new THREE.Float32BufferAttribute(buf.col, 3));
+        const mat = new THREE.MeshStandardMaterial({
+          vertexColors: true, metalness, roughness, roughnessMap: null,
+        });
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        return mesh;
+      };
+      const group = new THREE.Group();
+      const m1 = make(metal, 0.62, 0.38);
+      const m2 = make(matte, 0.05, 0.86);
+      if (m1) group.add(m1);
+      if (m2) group.add(m2);
+      const size = { x: maxX - minX + 1, y: maxY - minY + 1, z: maxZ - minZ + 1, count: voxels.length };
+      return { group, size };
+    }
+
+    function nameWeapon(s) {
+      const blade = byId(BLADES, s.blade);
+      const head = byId(HEADS, s.head);
+      const shaft = byId(SHAFTS, s.shaft);
+      const bits = [];
+      const matName = MATERIALS[s.mats.blade]?.name || "Steel";
+      if (s.blade !== "none" && s.head !== "none") bits.push("Hybrid");
+      if (blade.blades > 1) bits.push(blade.name);
+      else if (s.blade !== "none") bits.push(byId(TIPS, s.tip).name, blade.name);
+      if (s.head !== "none") bits.push(head.name);
+      if (s.shaft === "pike" || s.shaft === "spear" || s.shaft === "pole") bits.push("on " + shaft.name);
+      if (s.handle.includes("pistol")) bits.push("Pistol-Grip");
+      const main = bits.filter(Boolean).slice(0, 4).join(" · ") || "Custom Arm";
+      return matName + " " + main;
+    }
+
+    const defaultState = () => ({
+      seed: (Math.random() * 0xffffff) | 0,
+      blade: "arming",
+      head: "none",
+      shaft: "none",
+      handle: "wrapped",
+      guard: "simple",
+      pommel: "wheel",
+      counter: "none",
+      tip: "pointed",
+      edge: "plain",
+      ricasso: "short",
+      fuller: "single",
+      a: "none",
+      b: "none",
+      c: "none",
+      chaos: false,
+      mats: {
+        blade: "forgedSteel",
+        head: "darkIron",
+        guard: "ornateGold",
+        handle: "huntingWood",
+        shaft: "huntingWood",
+        pommel: "forgedSteel",
+        counter: "darkIron",
+        accent: "ornateGold",
+        attach: "darkIron",
+      },
+    });
+
+    const state = defaultState();
+
+    function randomize(all = true) {
+      const rng = mulberry32(state.seed);
+      const families = ["sword", "spear", "axe", "mace", "polearm", "chaos"];
+      const family = state.chaos ? "chaos" : pick(rng, families);
+      const matIds = Object.keys(MATERIALS);
+      if (all) {
+        if (family === "sword") {
+          state.blade = pick(rng, BLADES.filter((b) => b.id !== "none" && !b.tines)).id;
+          state.head = "none";
+          state.shaft = "none";
+          state.handle = pick(rng, ["wrapped", "twohand", "ribbed", "wire", "stub"]);
+          state.guard = pick(rng, GUARDS.filter((g) => g.id !== "none")).id;
+          state.pommel = pick(rng, POMMELS).id;
+          state.counter = pick(rng, ["none", "none", "butt"]);
+        } else if (family === "spear") {
+          state.blade = pick(rng, ["trident", "partisan", "ranseur", "needle", "glaive", "forked"]);
+          state.head = "none";
+          state.shaft = pick(rng, ["spear", "pike", "pole", "tapered"]);
+          state.handle = pick(rng, ["wrapped", "cord", "pistol", "swept"]);
+          state.guard = pick(rng, ["winged", "crescent", "collar", "langet"]);
+          state.pommel = pick(rng, ["scent", "ring", "round"]);
+          state.counter = pick(rng, ["spike", "tassel", "butt"]);
+        } else if (family === "axe") {
+          state.blade = rng() < 0.25 ? pick(rng, ["dagger", "cleaver", "none"]) : "none";
+          state.head = pick(rng, ["bearded", "broad", "doublebit", "tomahawk", "dualaxe", "bardiche", "francisca"]);
+          state.shaft = pick(rng, ["short", "medium", "banded"]);
+          state.handle = pick(rng, ["axe", "pistol", "ribbed", "flared"]);
+          state.guard = pick(rng, ["collar", "langet", "none"]);
+          state.pommel = pick(rng, ["round", "disc", "spiked"]);
+          state.counter = pick(rng, ["butt", "spike", "none"]);
+        } else if (family === "mace") {
+          state.blade = "none";
+          state.head = pick(rng, ["flanged", "ball", "morningstar", "warhammer", "maul", "spikes", "goedendag"]);
+          state.shaft = pick(rng, ["short", "medium", "studded"]);
+          state.handle = pick(rng, ["ribbed", "grooved", "hex", "pistol"]);
+          state.guard = pick(rng, ["collar", "spiked", "none"]);
+          state.pommel = pick(rng, ["counterdisc", "spiked", "cube"]);
+          state.counter = pick(rng, ["sphere", "flanged", "dual"]);
+        } else if (family === "polearm") {
+          state.blade = pick(rng, ["glaive", "partisan", "none", "trident"]);
+          state.head = pick(rng, ["halberd", "pollaxe", "lucerne", "hammerblade", "none"]);
+          if (state.blade === "none" && state.head === "none") state.head = "halberd";
+          state.shaft = pick(rng, ["pole", "pike", "spear"]);
+          state.handle = pick(rng, ["wrapped", "twohand", "cord", "pistol"]);
+          state.guard = pick(rng, ["langet", "winged", "collar"]);
+          state.pommel = pick(rng, ["round", "ring"]);
+          state.counter = pick(rng, ["spike", "butt", "tassel"]);
+        } else {
+          state.blade = pick(rng, BLADES).id;
+          state.head = pick(rng, HEADS).id;
+          state.shaft = pick(rng, SHAFTS).id;
+          state.handle = pick(rng, HANDLES).id;
+          state.guard = pick(rng, GUARDS).id;
+          state.pommel = pick(rng, POMMELS).id;
+          state.counter = pick(rng, COUNTERS).id;
+        }
+        state.tip = pick(rng, TIPS).id;
+        state.edge = pick(rng, EDGES).id;
+        state.ricasso = pick(rng, RICASSO).id;
+        state.fuller = pick(rng, FULLERS).id;
+        const extras = ATTACH.filter((a) => a.id !== "none");
+        state.a = rng() < 0.75 ? pick(rng, extras).id : "none";
+        state.b = rng() < 0.45 ? pick(rng, extras).id : "none";
+        state.c = rng() < 0.25 ? pick(rng, extras).id : "none";
+        state.mats.blade = pick(rng, ["forgedSteel", "darkIron", "polishedSilver", "ornateGold", "bone", "carbonFiber"]);
+        state.mats.head = pick(rng, ["darkIron", "forgedSteel", "bronze", "ornateGold"]);
+        state.mats.guard = pick(rng, ["ornateGold", "bronze", "forgedSteel", "darkIron"]);
+        state.mats.handle = pick(rng, ["huntingWood", "leather", "bone", "carbonFiber"]);
+        state.mats.shaft = pick(rng, ["huntingWood", "carbonFiber", "bone", "leather"]);
+        state.mats.pommel = pick(rng, ["forgedSteel", "ornateGold", "bronze", "darkIron"]);
+        state.mats.counter = state.mats.pommel;
+        state.mats.accent = pick(rng, ["ornateGold", "bronze", "polishedSilver"]);
+        state.mats.attach = pick(rng, ["darkIron", "forgedSteel", "bronze", "bone"]);
+      }
+    }
+
+    const viewport = document.getElementById("viewport");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0c0e14);
+    scene.fog = new THREE.Fog(0x0c0e14, 80, 220);
+    const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 500);
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" });
+    } catch (err) {
+      viewport.insertAdjacentHTML("beforeend", `<p class="hint" style="padding:1.5rem">WebGL is required to view the forge. ${String(err)}</p>`);
+      throw err;
+    }
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    viewport.appendChild(renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.target.set(0, 12, 0);
+    camera.position.set(28, 18, 38);
+
+    scene.add(new THREE.HemisphereLight(0x8a9bb0, 0x2a1c10, 0.7));
+    const key = new THREE.DirectionalLight(0xffe6c8, 1.35);
+    key.position.set(30, 50, 20);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.camera.near = 4;
+    key.shadow.camera.far = 140;
+    key.shadow.camera.left = key.shadow.camera.bottom = -40;
+    key.shadow.camera.right = key.shadow.camera.top = 40;
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0x88a0ff, 0.35);
+    rim.position.set(-20, 10, -30);
+    scene.add(rim);
+    const ember = new THREE.PointLight(0xff6a2a, 1.2, 80);
+    ember.position.set(-12, 6, 16);
+    scene.add(ember);
+
+    const daisGeo = new THREE.CylinderGeometry(16, 16, 1.2, 48);
+    const daisMat = new THREE.MeshStandardMaterial({ color: 0x1c2028, metalness: 0.2, roughness: 0.85 });
+    const dais = new THREE.Mesh(daisGeo, daisMat);
+    dais.position.y = -0.6;
+    dais.receiveShadow = true;
+    scene.add(dais);
+    const ringGeo = new THREE.TorusGeometry(16.4, 0.18, 8, 64);
+    const ring = new THREE.Mesh(ringGeo, new THREE.MeshStandardMaterial({ color: 0xe8b84a, metalness: 0.8, roughness: 0.3 }));
+    ring.rotation.x = Math.PI / 2;
+    ring.position.y = 0.05;
+    scene.add(ring);
+
+    const sparks = new THREE.BufferGeometry();
+    const sparkPos = new Float32Array(180);
+    for (let i = 0; i < 60; i++) {
+      sparkPos[i * 3] = (Math.random() - 0.5) * 40;
+      sparkPos[i * 3 + 1] = Math.random() * 28;
+      sparkPos[i * 3 + 2] = (Math.random() - 0.5) * 40;
+    }
+    sparks.setAttribute("position", new THREE.BufferAttribute(sparkPos, 3));
+    const sparkMesh = new THREE.Points(sparks, new THREE.PointsMaterial({ color: 0xff9a4a, size: 0.18, transparent: true, opacity: 0.55 }));
+    scene.add(sparkMesh);
+
+    let weaponGroup = new THREE.Group();
+    scene.add(weaponGroup);
+
+    function fitCamera(size) {
+      const maxDim = Math.max(size.x, size.y * 0.6, size.z, 12);
+      camera.position.set(maxDim * 1.15, size.y * 0.42 + 6, maxDim * 1.45);
+      controls.target.set(0, size.y * 0.45, 0);
+      controls.update();
+    }
+
+    function rebuild(fit = false) {
+      scene.remove(weaponGroup);
+      weaponGroup.traverse((o) => {
+        if (o.geometry) o.geometry.dispose();
+        if (o.material) o.material.dispose();
+      });
+      const { grid, weldInfo } = buildWeapon(state);
+      const { group, size } = meshFromGrid(grid);
+      weaponGroup = group;
+      scene.add(weaponGroup);
+      document.getElementById("weapon-name").textContent = nameWeapon(state);
+      document.getElementById("weapon-seed").textContent = "seed " + state.seed.toString(16).padStart(6, "0");
+      document.getElementById("stat-voxels").textContent = String(size.count);
+      document.getElementById("stat-size").textContent = size.x + "×" + size.y + "×" + size.z;
+      document.getElementById("stat-weld").textContent = weldInfo.welds ? "attached +" + weldInfo.welds : "attached";
+      syncControls();
+      if (fit) fitCamera(size);
+      location.hash = "s=" + serialize();
+    }
+
+    function serialize() {
+      const m = state.mats;
+      return [state.seed, state.blade, state.head, state.shaft, state.handle, state.guard, state.pommel, state.counter, state.tip, state.edge, state.ricasso, state.fuller, state.a, state.b, state.c, m.blade, m.head, m.guard, m.handle, m.shaft, m.pommel, m.counter, m.accent, m.attach, state.chaos ? 1 : 0].join(".");
+    }
+    function deserialize(str) {
+      const p = str.split(".");
+      if (p.length < 24) return;
+      Object.assign(state, {
+        seed: parseInt(p[0], 10) || state.seed,
+        blade: p[1], head: p[2], shaft: p[3], handle: p[4], guard: p[5], pommel: p[6], counter: p[7],
+        tip: p[8], edge: p[9], ricasso: p[10], fuller: p[11], a: p[12], b: p[13], c: p[14],
+      });
+      state.mats = { blade: p[15], head: p[16], guard: p[17], handle: p[18], shaft: p[19], pommel: p[20], counter: p[21], accent: p[22], attach: p[23] };
+      state.chaos = p[24] === "1";
+    }
+
+    function row(list, key, label) {
+      const wrap = document.createElement("div");
+      wrap.className = "row";
+      wrap.innerHTML = `<label for="sel-${key}">${label}</label>`;
+      const sel = document.createElement("select");
+      sel.id = "sel-" + key;
+      for (const item of list) {
+        const o = document.createElement("option");
+        o.value = item.id; o.textContent = item.name; sel.appendChild(o);
+      }
+      sel.value = state[key];
+      sel.addEventListener("change", () => { state[key] = sel.value; rebuild(); });
+      const prev = document.createElement("button");
+      prev.className = "cycle prev"; prev.type = "button"; prev.setAttribute("aria-label", "Previous " + label); prev.textContent = "‹";
+      const next = document.createElement("button");
+      next.className = "cycle next"; next.type = "button"; next.setAttribute("aria-label", "Next " + label); next.textContent = "›";
+      const cycle = (d) => {
+        const i = list.findIndex((x) => x.id === state[key]);
+        state[key] = list[(i + d + list.length) % list.length].id;
+        rebuild();
+      };
+      prev.addEventListener("click", () => cycle(-1));
+      next.addEventListener("click", () => cycle(1));
+      wrap.append(sel, prev, next);
+      return wrap;
+    }
+
+    function section(title) {
+      const s = document.createElement("section");
+      s.className = "section";
+      s.innerHTML = `<h2>${title}</h2>`;
+      return s;
+    }
+
+    const left = document.getElementById("parts-panel");
+    const right = document.getElementById("style-panel");
+    const anatomy = section("Anatomy");
+    anatomy.append(
+      row(BLADES, "blade", "Blade"),
+      row(HEADS, "head", "Head"),
+      row(SHAFTS, "shaft", "Shaft"),
+      row(HANDLES, "handle", "Hilt / Handle"),
+      row(GUARDS, "guard", "Guard"),
+      row(POMMELS, "pommel", "Pommel"),
+      row(COUNTERS, "counter", "Counterweight"),
+    );
+    const accents = section("Blade accents");
+    accents.append(
+      row(TIPS, "tip", "Tip"),
+      row(EDGES, "edge", "Edge"),
+      row(RICASSO, "ricasso", "Ricasso"),
+      row(FULLERS, "fuller", "Fuller"),
+    );
+    const rails = section("Rail attachments");
+    rails.append(
+      row(ATTACH, "a", "Rail A"),
+      row(ATTACH, "b", "Rail B"),
+      row(ATTACH, "c", "Rail C"),
+    );
+    const hint = document.createElement("p");
+    hint.className = "hint";
+    hint.textContent = "Short blades lock onto pike shafts, axe heads seat on sword hilts, and pistol grips still feed a full spear spine. Every cube is face-welded to the core.";
+    left.append(anatomy, accents, rails, hint);
+
+    const presetSec = section("Hall of arms");
+    const presetGrid = document.createElement("div");
+    presetGrid.className = "presets";
+    for (const p of PRESETS) {
+      const b = document.createElement("button");
+      b.className = "btn"; b.type = "button"; b.textContent = p.name;
+      b.addEventListener("click", () => {
+        Object.assign(state, p);
+        rebuild(true);
+      });
+      presetGrid.appendChild(b);
+    }
+    presetSec.appendChild(presetGrid);
+    const chaos = document.createElement("label");
+    chaos.className = "toggle";
+    chaos.innerHTML = `<input type="checkbox" id="chaos" /> Chaos mixing (any socket, any part)`;
+    chaos.querySelector("input").addEventListener("change", (e) => { state.chaos = e.target.checked; });
+    presetSec.appendChild(chaos);
+
+    const matSec = section("Materials");
+    const matSlots = [
+      ["blade", "Blade"], ["head", "Head"], ["guard", "Guard"], ["handle", "Handle"],
+      ["shaft", "Shaft"], ["pommel", "Pommel"], ["accent", "Ornament"], ["attach", "Rails"],
+    ];
+    for (const [key, label] of matSlots) {
+      const block = document.createElement("div");
+      block.className = "mat-block";
+      block.innerHTML = `<p>${label}</p>`;
+      const sw = document.createElement("div");
+      sw.className = "swatches";
+      sw.dataset.slot = key;
+      for (const [id, m] of Object.entries(MATERIALS)) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "swatch";
+        btn.dataset.mat = id;
+        btn.style.background = `linear-gradient(160deg, #${m.hi.toString(16).padStart(6, "0")}, #${m.lo.toString(16).padStart(6, "0")})`;
+        btn.textContent = m.name.split(" ")[0];
+        btn.setAttribute("aria-label", label + " " + m.name);
+        btn.addEventListener("click", () => { state.mats[key] = id; if (key === "pommel") state.mats.counter = id; rebuild(); });
+        sw.appendChild(btn);
+      }
+      block.appendChild(sw);
+      matSec.appendChild(block);
+    }
+    right.append(presetSec, matSec);
+
+    function syncControls() {
+      for (const key of ["blade", "head", "shaft", "handle", "guard", "pommel", "counter", "tip", "edge", "ricasso", "fuller", "a", "b", "c"]) {
+        const sel = document.getElementById("sel-" + key);
+        if (sel) sel.value = state[key];
+      }
+      const c = document.getElementById("chaos");
+      if (c) c.checked = state.chaos;
+      for (const sw of document.querySelectorAll(".swatches")) {
+        const slot = sw.dataset.slot;
+        for (const btn of sw.querySelectorAll(".swatch")) btn.setAttribute("aria-pressed", btn.dataset.mat === state.mats[slot] ? "true" : "false");
+      }
+    }
+
+    function toast(msg) {
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 2200);
+    }
+
+    document.getElementById("btn-forge").addEventListener("click", () => {
+      state.seed = (Math.random() * 0xffffff) | 0;
+      randomize(true);
+      rebuild(true);
+    });
+    document.getElementById("btn-camera").addEventListener("click", () => {
+      const box = new THREE.Box3().setFromObject(weaponGroup);
+      const size = box.getSize(new THREE.Vector3());
+      fitCamera({ x: size.x, y: size.y, z: size.z });
+    });
+    document.getElementById("btn-shot").addEventListener("click", () => {
+      renderer.render(scene, camera);
+      const a = document.createElement("a");
+      a.href = renderer.domElement.toDataURL("image/png");
+      a.download = "voxel-forge-" + state.seed.toString(16) + ".png";
+      a.click();
+      toast("PNG saved");
+    });
+    document.getElementById("btn-copy").addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(location.href);
+        toast("Seed URL copied");
+      } catch {
+        toast("Seed " + state.seed.toString(16));
+      }
+    });
+
+    function resize() {
+      const w = viewport.clientWidth, h = viewport.clientHeight;
+      camera.aspect = w / Math.max(1, h);
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h, false);
+    }
+    window.addEventListener("resize", resize);
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let t = 0;
+    function frame() {
+      requestAnimationFrame(frame);
+      t += 0.01;
+      if (!reduce) {
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.6;
+        sparkMesh.rotation.y = t * 0.15;
+        ember.intensity = 1.05 + Math.sin(t * 2) * 0.2;
+      } else controls.autoRotate = false;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    if (location.hash.startsWith("#s=")) deserialize(location.hash.slice(3));
+    resize();
+    try {
+      rebuild(true);
+    } catch (err) {
+      console.error(err);
+      document.getElementById("weapon-name").textContent = "Forge failed";
+      document.getElementById("weapon-seed").textContent = String(err && err.message ? err.message : err);
+      toast("Could not build weapon");
+    }
+    frame();
+    window.__forge = { state, rebuild, buildWeapon };
+  </script>
+</body>
+</html>
