@@ -883,18 +883,22 @@
       } else if (spec.id === "chain" || spec.id === "flail" || spec.id === "beads") {
         let cx = ox, cy = y, cz = z;
         const n = spec.id === "beads" ? 8 : 10;
-        for (let i = 0; i < n; i++) {
+        for (let i = 1; i <= n; i++) {
           cy -= 1;
-          if (i % 2 === 0) cx += dir;
-          else cz += (i % 4 === 1 ? 1 : -1);
           put(g, cx, cy, cz, spec.id === "beads" ? accent : mat, i % 2 ? "hi" : "lo", "attach");
+          if (i % 2 === 0) {
+            cx += dir;
+            put(g, cx, cy, cz, spec.id === "beads" ? accent : mat, "mid", "attach");
+          }
         }
         if (spec.id === "flail") box(g, cx - 1, cy - 3, cz - 1, cx + 1, cy, cz + 1, mat, "mid", "attach");
       } else if (spec.id === "banner" || spec.id === "ribbon") {
         box(g, ox, y, z, ox, y + 10, z, mat, "mid", "attach");
         const W = spec.id === "ribbon" ? 3 : 6;
-        for (let i = 0; i < 9; i++) for (let w = 1; w <= W; w++)
-          put(g, ox + dir * w, y + 10 - i, z + (i % 3 === 0 ? 1 : 0), cloth, (i + w) % 2 ? "hi" : "mid", "attach");
+        for (let i = 0; i < 9; i++) for (let w = 1; w <= W; w++) {
+          put(g, ox + dir * w, y + 10 - i, z, cloth, (i + w) % 2 ? "hi" : "mid", "attach");
+          if (i % 3 === 0) put(g, ox + dir * w, y + 10 - i, z + dir, cloth, "lo", "attach");
+        }
       } else if (spec.id === "rings") {
         box(g, x - 2, y, z - 2, x + 2, y, z + 2, mat, "lo", "attach");
         box(g, -1, y, -1, 0, y, 0, mat, "mid", "attach");
@@ -1219,7 +1223,13 @@
     scene.background = new THREE.Color(0x0c0e14);
     scene.fog = new THREE.Fog(0x0c0e14, 80, 220);
     const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 500);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, powerPreference: "high-performance" });
+    } catch (err) {
+      viewport.insertAdjacentHTML("beforeend", `<p class="hint" style="padding:1.5rem">WebGL is required to view the forge. ${String(err)}</p>`);
+      throw err;
+    }
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -1500,7 +1510,14 @@
 
     if (location.hash.startsWith("#s=")) deserialize(location.hash.slice(3));
     resize();
-    rebuild(true);
+    try {
+      rebuild(true);
+    } catch (err) {
+      console.error(err);
+      document.getElementById("weapon-name").textContent = "Forge failed";
+      document.getElementById("weapon-seed").textContent = String(err && err.message ? err.message : err);
+      toast("Could not build weapon");
+    }
     frame();
     window.__forge = { state, rebuild, buildWeapon };
   </script>
