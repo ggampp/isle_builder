@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sala de Jogos — cinco mundos no navegador</title>
-    <meta name="description" content="Cinco jogos feitos do zero em TypeScript: ilha pixel, ferrovia 3D, puzzle de luz, saloon voxel e um vale de magia." />
+    <title>Sala de Jogos — cinco mundos e uma forja no navegador</title>
+    <meta name="description" content="Cinco jogos feitos do zero em TypeScript, mais uma forja voxel de armas brancas: ilha pixel, ferrovia 3D, puzzle de luz, saloon voxel, um vale de magia e um gerador de armas." />
     <link rel="stylesheet" href="./styles.css" />
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>" />
   </head>
@@ -32,7 +32,7 @@
     </div>
 
     <header class="hero">
-      <p class="kicker"><span>◆</span> cinco jogos · um repositório · feitos do zero <span>◆</span></p>
+      <p class="kicker"><span>◆</span> cinco jogos · uma forja · feitos do zero <span>◆</span></p>
       <h1 class="title">
         <span class="line-1">SALA</span>
         <span class="line-2">DE JOGOS</span>
@@ -41,6 +41,7 @@
         Sandboxes construídos do zero em <b>TypeScript</b> + <b>Three.js</b>, sem
         engine de jogo no meio do caminho. Os mundos — terreno, água, casario e
         criaturas — são <b>gerados em código</b>. Escolha um e comece a construir.
+        Na forja, cada cubo de uma arma voxel se encaixa no próximo.
       </p>
       <div class="badges">
         <span class="badge b1">🎨 mundos gerados em código</span>
@@ -52,8 +53,8 @@
 
     <div class="ticker" aria-hidden="true">
       <div class="ticker-track">
-        <span>PINTE UMA ILHA ✦ ASSENTE TRILHOS ✦ DERRUBE O SALOON ✦ MISTURE A LUZ ✦ SUBA DE NÍVEL ✦ EXPLODA PEDRAS ✦ FECHE CONTRATOS ✦</span>
-        <span>PINTE UMA ILHA ✦ ASSENTE TRILHOS ✦ DERRUBE O SALOON ✦ MISTURE A LUZ ✦ SUBA DE NÍVEL ✦ EXPLODA PEDRAS ✦ FECHE CONTRATOS ✦</span>
+        <span>PINTE UMA ILHA ✦ ASSENTE TRILHOS ✦ DERRUBE O SALOON ✦ MISTURE A LUZ ✦ SUBA DE NÍVEL ✦ FORJE UMA ARMA ✦ EXPLODA PEDRAS ✦ FECHE CONTRATOS ✦</span>
+        <span>PINTE UMA ILHA ✦ ASSENTE TRILHOS ✦ DERRUBE O SALOON ✦ MISTURE A LUZ ✦ SUBA DE NÍVEL ✦ FORJE UMA ARMA ✦ EXPLODA PEDRAS ✦ FECHE CONTRATOS ✦</span>
       </div>
     </div>
 
@@ -416,6 +417,68 @@
           <p class="status">Jogo completo · action RPG no vale</p>
         </div>
       </article>
+      <!-- ─────────────────────── Voxel Forge ─────────────────────── -->
+      <article class="cabinet forge">
+        <div class="cabinet-glow" aria-hidden="true"></div>
+        <div class="screen">
+          <svg viewBox="0 0 320 200" role="img" aria-label="Espada voxel dourada e de aço sobre uma bigorna">
+            <rect width="320" height="200" fill="#101218" />
+            <rect y="150" width="320" height="50" fill="#1c2028" />
+            <ellipse cx="160" cy="158" rx="70" ry="10" fill="#2a303c" />
+            <rect x="70" y="148" width="180" height="14" fill="#3a3d46" />
+            <rect x="86" y="140" width="148" height="10" fill="#4a4e58" />
+            <!-- glow -->
+            <ellipse cx="168" cy="96" rx="28" ry="70" fill="#ff6a2a" opacity="0.18" />
+            <!-- blade -->
+            <g>
+              <rect x="164" y="18" width="10" height="96" fill="#c5d0dc" />
+              <rect x="166" y="16" width="6" height="8" fill="#e8eef4" />
+              <rect x="167" y="28" width="4" height="70" fill="#7d8b99" />
+              <rect x="162" y="40" width="2" height="8" fill="#c5d0dc" />
+              <rect x="174" y="52" width="2" height="8" fill="#c5d0dc" />
+            </g>
+            <!-- guard -->
+            <rect x="140" y="112" width="58" height="8" fill="#e8b84a" />
+            <rect x="136" y="110" width="8" height="12" fill="#d4a430" />
+            <rect x="194" y="110" width="8" height="12" fill="#d4a430" />
+            <!-- hilt -->
+            <rect x="164" y="120" width="10" height="28" fill="#8b5a32" />
+            <rect x="164" y="124" width="10" height="4" fill="#d2a36a" />
+            <rect x="164" y="132" width="10" height="4" fill="#d2a36a" />
+            <!-- pommel -->
+            <rect x="162" y="148" width="14" height="10" fill="#7d8b99" />
+            <rect x="164" y="150" width="10" height="6" fill="#e8b84a" />
+            <!-- sparks -->
+            <rect x="210" y="48" width="4" height="4" fill="#ff9a4a" />
+            <rect x="226" y="66" width="3" height="3" fill="#ffe08a" />
+            <rect x="118" y="58" width="3" height="3" fill="#ff6a2a" />
+          </svg>
+          <div class="scanlines" aria-hidden="true"></div>
+        </div>
+        <div class="cabinet-body">
+          <div class="marquee-plate">
+            <h2>Voxel&nbsp;Forge</h2>
+            <p class="sub">gerador de armas</p>
+          </div>
+          <p class="pitch">
+            Uma forja de cubos. Troque lâminas, guardas, empunhaduras, pomos,
+            hastes, cabeças de machado e maça — e misture tudo:
+            <b>punho de pistola num pique</b>, machado num punho de espada,
+            tridente com corrente.
+          </p>
+          <ul class="chips">
+            <li>⚔️ peças intercambiáveis</li>
+            <li>🪓 híbridos e tridentes</li>
+            <li>🔗 trilhos e correntes</li>
+            <li>🧱 um único HTML</li>
+          </ul>
+          <a class="play forge-btn" href="./voxel-forge/">
+            <span class="play-label">Abrir Voxel Forge</span>
+            <span class="play-arrow" aria-hidden="true">▶</span>
+          </a>
+          <p class="status">Arquivo único · cubos soldados na arma</p>
+        </div>
+      </article>
     </main>
 
     <section class="how">
@@ -433,16 +496,20 @@ cd prisma &amp;&amp; npm install &amp;&amp; npm run dev
 cd splinter &amp;&amp; npm install &amp;&amp; npm run dev
 
 # Glint
-cd glint &amp;&amp; npm install &amp;&amp; npm run dev</code></pre>
+cd glint &amp;&amp; npm install &amp;&amp; npm run dev
+
+# Voxel Forge (arquivo HTML único)
+# abra voxelforge/index.html ou sirva a pasta</code></pre>
       <p>
         Cada jogo é uma aplicação Vite independente, com seus próprios testes
-        (<code>npm run test</code>) e gate de tipos no build.
+        (<code>npm run test</code>) e gate de tipos no build. A forja voxel é um
+        único HTML, sem passo de build.
       </p>
     </section>
 
     <footer>
       <p>Feito à mão, pixel e polígono por vez.</p>
-      <p class="small">Isle Builder · Canyon Rails · Prisma · Splinter · Glint · TypeScript · Vite</p>
+      <p class="small">Isle Builder · Canyon Rails · Prisma · Splinter · Glint · Voxel Forge · TypeScript · Vite</p>
     </footer>
   </body>
 </html>
