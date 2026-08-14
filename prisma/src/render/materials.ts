@@ -44,13 +44,15 @@ export class MaterialLibrary {
     });
     this.brass = new THREE.MeshStandardMaterial({
       color: '#c4a35a',
-      roughness: 0.35,
+      roughness: 0.32,
       metalness: 0.82,
+      envMapIntensity: 1.2,
     });
     this.obsidian = new THREE.MeshStandardMaterial({
       color: '#3a4150',
       roughness: 0.28,
       metalness: 0.45,
+      envMapIntensity: 1.1,
     });
     this.glass = new THREE.MeshPhysicalMaterial({
       color: '#d7e7ff',
@@ -60,11 +62,13 @@ export class MaterialLibrary {
       thickness: 0.35,
       transparent: true,
       opacity: 0.85,
+      envMapIntensity: 1.4,
     });
     this.marble = new THREE.MeshStandardMaterial({
       color: '#161b24',
-      roughness: 0.55,
-      metalness: 0.12,
+      roughness: 0.28,
+      metalness: 0.38,
+      envMapIntensity: 1.05,
     });
     this.emissive = new THREE.MeshStandardMaterial({
       color: '#fff4d6',
@@ -87,13 +91,15 @@ export class MaterialLibrary {
     });
     this.table = new THREE.MeshStandardMaterial({
       color: '#12161e',
-      roughness: 0.48,
-      metalness: 0.22,
+      roughness: 0.22,
+      metalness: 0.52,
+      envMapIntensity: 1.2,
     });
     this.goldTrim = new THREE.MeshStandardMaterial({
       color: '#8a7040',
-      roughness: 0.42,
-      metalness: 0.7,
+      roughness: 0.32,
+      metalness: 0.78,
+      envMapIntensity: 1.15,
     });
   }
 

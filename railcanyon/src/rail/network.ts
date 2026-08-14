@@ -1,5 +1,5 @@
 import { WATER_LEVEL, heightAt } from '../world/heightfield.ts';
-import { PIECE_SPECS, pieceEnd, samplePiece } from './geometry.ts';
+import { PIECE_SPECS, pieceEnd, samplePiece, sampleToward, normalizeAngle } from './geometry.ts';
 import type { PieceKind, Pose } from './geometry.ts';
 
 export interface Vec3 {
@@ -12,6 +12,8 @@ export interface PlacedPiece {
   kind: PieceKind;
   start: Pose;
   end: Pose;
+  /** Última peça de um circuito: o fim foi puxado até a origem da linha. */
+  closesLoop?: boolean;
 }
 
 export interface TrackPath {
@@ -20,11 +22,15 @@ export interface TrackPath {
   /** Distância acumulada até cada ponto. */
   distances: number[];
   totalLength: number;
+  /** Primeiro e último ponto coincidem — o trem dá a volta. */
+  closed: boolean;
 }
 
 export interface PlacementCheck {
   ok: boolean;
   reason: string;
+  /** A peça encaixa no trilho inicial e fecha o circuito. */
+  closesLoop?: boolean;
 }
 
 /** Ponto de derivação de um desvio: índice de pose na linha-mãe. */
@@ -40,6 +46,7 @@ export interface Line {
   anchor: Anchor | null;
   origin: Pose;
   pieces: PlacedPiece[];
+  closed: boolean;
 }
 
 export interface SerializedLine {
@@ -60,6 +67,12 @@ const RAIL_LIFT = 0.14;
 /** Rampa máxima aceita (subida por metro percorrido). */
 const MAX_GRADE = 0.3;
 const WORLD_LIMIT = 205;
+/** Distância (m) em que a ponta nova "gruda" no trilho inicial. */
+export const LOOP_SNAP_RADIUS = 18;
+/** Comprimento mínimo da linha antes de aceitar um circuito (evita fechar nas primeiras peças). */
+const MIN_LOOP_LENGTH = 70;
+/** Diferença máxima de heading para o encaixe não ficar torto. */
+const MAX_HEADING_SNAP = Math.PI * 0.4;
 
 function stepsFor(kind: PieceKind): number {
   return Math.max(2, Math.round(PIECE_SPECS[kind].length / SAMPLE_STEP));
@@ -83,6 +96,7 @@ export class RailNetwork {
       anchor: null,
       origin: { ...origin },
       pieces: [],
+      closed: false,
     });
   }
 
@@ -137,7 +151,13 @@ export class RailNetwork {
       : [{ ...line.origin }];
     if (line.anchor && poses.length === 0) poses.push({ ...line.origin });
     for (const piece of line.pieces) {
-      poses.push(...samplePiece(piece.start, piece.kind, stepsFor(piece.kind)));
+      if (piece.closesLoop) {
+        const gap = Math.hypot(piece.start.x - line.origin.x, piece.start.z - line.origin.z);
+        const steps = Math.max(2, Math.round(gap / SAMPLE_STEP));
+        poses.push(...sampleToward(piece.start, line.origin, steps));
+      } else {
+        poses.push(...samplePiece(piece.start, piece.kind, stepsFor(piece.kind)));
+      }
     }
     return poses;
   }
@@ -145,7 +165,7 @@ export class RailNetwork {
   path(id: number = this.activeLineId): TrackPath {
     const cached = this.pathCache.get(id);
     if (cached) return cached;
-    const built = buildPathFromPoses(this.posesFor(id));
+    const built = buildPathFromPoses(this.posesFor(id), this.line(id)?.closed === true);
     this.pathCache.set(id, built);
     return built;
   }
@@ -157,13 +177,23 @@ export class RailNetwork {
   /** Verifica se a peça pode ser assentada na ponta da linha ativa. */
   canPlace(kind: PieceKind, obstacle?: ObstacleCheck): PlacementCheck {
     const line = this.activeLine;
+    if (line.closed) {
+      return { ok: false, reason: 'Esta linha já é um circuito — desfaça para abrir de novo' };
+    }
     const start = this.railhead;
-    const end = pieceEnd(start, kind);
-    if (Math.abs(end.x) > WORLD_LIMIT || Math.abs(end.z) > WORLD_LIMIT) {
+    const closing = this.canSnapToOrigin(line, kind, start);
+    const end = closing ? { ...line.origin } : pieceEnd(start, kind);
+    if (!closing && (Math.abs(end.x) > WORLD_LIMIT || Math.abs(end.z) > WORLD_LIMIT)) {
       return { ok: false, reason: 'Fora dos limites do vale' };
     }
 
-    const newPoses = samplePiece(start, kind, stepsFor(kind));
+    const newPoses = closing
+      ? sampleToward(
+        start,
+        line.origin,
+        Math.max(2, Math.round(Math.hypot(start.x - line.origin.x, start.z - line.origin.z) / SAMPLE_STEP)),
+      )
+      : samplePiece(start, kind, stepsFor(kind));
     if (obstacle) {
       for (const pose of newPoses) {
         if (obstacle(pose.x, pose.z)) {
@@ -181,14 +211,40 @@ export class RailNetwork {
       const grade = Math.abs(path.points[i].y - path.points[i - 1].y) / ds;
       if (grade > MAX_GRADE) return { ok: false, reason: 'Rampa íngreme demais' };
     }
-    return { ok: true, reason: '' };
+    return { ok: true, reason: '', closesLoop: closing };
+  }
+
+  /** A peça atual encaixa no trilho inicial se for confirmada. */
+  wouldClose(kind: PieceKind): boolean {
+    return this.canSnapToOrigin(this.activeLine, kind, this.railhead);
+  }
+
+  private canSnapToOrigin(line: Line, kind: PieceKind, start: Pose): boolean {
+    if (line.closed) return false;
+    const existing = this.path(line.id);
+    if (existing.totalLength < MIN_LOOP_LENGTH) return false;
+    const origin = line.origin;
+    const distStart = Math.hypot(start.x - origin.x, start.z - origin.z);
+    const natural = pieceEnd(start, kind);
+    const distEnd = Math.hypot(natural.x - origin.x, natural.z - origin.z);
+    if (distStart > LOOP_SNAP_RADIUS && distEnd > LOOP_SNAP_RADIUS) return false;
+    const approach = distEnd <= distStart ? natural : start;
+    return Math.abs(normalizeAngle(approach.heading - origin.heading)) <= MAX_HEADING_SNAP;
   }
 
   place(kind: PieceKind, obstacle?: ObstacleCheck): PlacementCheck {
     const check = this.canPlace(kind, obstacle);
     if (!check.ok) return check;
+    const line = this.activeLine;
     const start = this.railhead;
-    this.activeLine.pieces.push({ kind, start, end: pieceEnd(start, kind) });
+    const closing = check.closesLoop === true;
+    line.pieces.push({
+      kind,
+      start,
+      end: closing ? { ...line.origin } : pieceEnd(start, kind),
+      closesLoop: closing,
+    });
+    if (closing) line.closed = true;
     this.invalidate();
     return check;
   }
@@ -210,6 +266,7 @@ export class RailNetwork {
     }
 
     line.pieces.pop();
+    line.closed = false;
     this.invalidate();
     return { kind: last.kind, reason: '' };
   }
@@ -225,6 +282,7 @@ export class RailNetwork {
       anchor: { lineId: parentLineId, poseIndex },
       origin: { ...poses[poseIndex] },
       pieces: [],
+      closed: false,
     });
     this.activeLineId = id;
     this.invalidate();
@@ -255,7 +313,7 @@ export class RailNetwork {
   /** Recria a malha inteira a partir de um jogo salvo. */
   restore(serialized: SerializedLine[]): void {
     const origin = this.lines[0].origin;
-    this.lines = [{ id: 0, name: 'Linha principal', anchor: null, origin, pieces: [] }];
+    this.lines = [{ id: 0, name: 'Linha principal', anchor: null, origin, pieces: [], closed: false }];
     this.nextId = 1;
     this.activeLineId = 0;
     this.invalidate();
@@ -280,7 +338,7 @@ export class RailNetwork {
  * folga sobre a água e é suavizado — daí saem rampas suaves e o vão plano da
  * ponte sobre o rio, sem nenhum caso especial de "aqui é ponte".
  */
-export function buildPathFromPoses(poses: ReadonlyArray<Pose>): TrackPath {
+export function buildPathFromPoses(poses: ReadonlyArray<Pose>, closed = false): TrackPath {
   const ground = poses.map((p) => heightAt(p.x, p.z));
   const y = ground.map((g) => Math.max(g, WATER_LEVEL + BRIDGE_CLEARANCE));
 
@@ -301,7 +359,7 @@ export function buildPathFromPoses(poses: ReadonlyArray<Pose>): TrackPath {
     const b = points[i];
     distances.push(distances[i - 1] + Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z));
   }
-  return { points, distances, totalLength: distances[distances.length - 1] ?? 0 };
+  return { points, distances, totalLength: distances[distances.length - 1] ?? 0, closed };
 }
 
 /** Posição e direção a uma distância `s` ao longo do caminho. */
@@ -311,7 +369,9 @@ export function sampleAt(path: TrackPath, s: number): { position: Vec3; tangent:
     const p = points[0] ?? { x: 0, y: 0, z: 0 };
     return { position: { ...p }, tangent: { x: 1, y: 0, z: 0 } };
   }
-  const clamped = Math.min(Math.max(s, 0), path.totalLength);
+  const clamped = path.closed
+    ? wrapLength(s, path.totalLength)
+    : Math.min(Math.max(s, 0), path.totalLength);
   let lo = 0;
   let hi = distances.length - 1;
   while (hi - lo > 1) {
@@ -346,4 +406,11 @@ export function closestOnPath(path: TrackPath, x: number, z: number): { distance
     }
   }
   return { distance: best, s: bestS };
+}
+
+/** Distância ao longo de um circuito: valores fora de [0, length) voltam ao início. */
+export function wrapLength(s: number, length: number): number {
+  if (length <= 0) return 0;
+  const wrapped = s % length;
+  return wrapped < 0 ? wrapped + length : wrapped;
 }

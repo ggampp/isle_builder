@@ -69,18 +69,51 @@ function seatOnGround(root: THREE.Object3D): void {
   root.position.z -= (fitted.min.z + fitted.max.z) / 2;
 }
 
+/**
+ * A cena do Canyon Rails só tem Hemisphere + Directional, sem IBL.
+ * GLBs do Tripo vêm como MeshStandardMaterial com metallicFactor=1 — sem
+ * environment map o diffuse some e a locomotiva (metal) fica preta/invisível.
+ * Converte para Lambert, o mesmo shading do resto do jogo.
+ */
+export function toGameMaterial(mat: THREE.Material): THREE.Material {
+  const asLambert = (source: THREE.MeshStandardMaterial): THREE.MeshLambertMaterial => {
+    const next = new THREE.MeshLambertMaterial({
+      map: source.map,
+      color: source.color,
+      transparent: source.transparent,
+      opacity: source.opacity,
+      alphaMap: source.alphaMap,
+      aoMap: source.aoMap,
+      lightMap: source.lightMap,
+      emissive: source.emissive,
+      emissiveMap: source.emissiveMap,
+      emissiveIntensity: source.emissiveIntensity,
+      side: THREE.DoubleSide,
+      flatShading: true,
+    });
+    return next;
+  };
+
+  if (mat instanceof THREE.MeshStandardMaterial) return asLambert(mat);
+
+  mat.side = THREE.DoubleSide;
+  if ('flatShading' in mat) {
+    (mat as THREE.MeshLambertMaterial).flatShading = true;
+  }
+  mat.needsUpdate = true;
+  return mat;
+}
+
 function flattenMaterials(root: THREE.Object3D): void {
   root.traverse((obj) => {
     if (!(obj instanceof THREE.Mesh)) return;
     obj.castShadow = true;
     obj.receiveShadow = true;
-    const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-    for (const mat of mats) {
-      if (mat && 'flatShading' in mat) {
-        (mat as THREE.MeshLambertMaterial).flatShading = true;
-        mat.needsUpdate = true;
-      }
-    }
+    obj.frustumCulled = false;
+    obj.material = Array.isArray(obj.material)
+      ? obj.material.map(toGameMaterial)
+      : toGameMaterial(obj.material);
+    obj.geometry.computeBoundingSphere();
   });
 }
 
@@ -95,31 +128,48 @@ function cloneMaterials(group: THREE.Group): void {
   });
 }
 
-function fitTrain(root: THREE.Object3D, kind: TrainKind): void {
-  const spec = TRAIN_FIT[kind];
-  root.rotation.y += spec.yaw;
+function keepScaleOnly(root: THREE.Object3D): void {
   root.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(root);
+  const xAxis = new THREE.Vector3();
+  const yAxis = new THREE.Vector3();
+  const zAxis = new THREE.Vector3();
+  root.traverse((obj) => {
+    obj.updateMatrix();
+    const e = obj.matrix.elements;
+    xAxis.set(e[0], e[1], e[2]);
+    yAxis.set(e[4], e[5], e[6]);
+    zAxis.set(e[8], e[9], e[10]);
+    const sx = xAxis.length() || 1;
+    const sy = yAxis.length() || 1;
+    const sz = zAxis.length() || 1;
+    obj.position.set(0, 0, 0);
+    obj.quaternion.identity();
+    obj.rotation.set(0, 0, 0);
+    obj.scale.set(sx, sy, sz);
+    obj.matrixAutoUpdate = true;
+    obj.updateMatrix();
+  });
+}
+
+function fitTrain(body: THREE.Object3D, kind: TrainKind): void {
+  const spec = TRAIN_FIT[kind];
+  keepScaleOnly(body);
+  body.updateMatrixWorld(true);
+  const raw = new THREE.Box3().setFromObject(body);
+  const rawSize = new THREE.Vector3();
+  raw.getSize(rawSize);
+  // Trilho corre no +X local do carro. Se o GLB for mais longo em Z, vira 90°.
+  if (rawSize.z > rawSize.x + 0.05) body.rotation.y += spec.yaw;
+  body.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(body);
   const size = new THREE.Vector3();
   box.getSize(size);
   const length = Math.max(size.x, size.z);
   if (length < 1e-4) return;
   const byLength = spec.length / length;
   const byHeight = size.y > 1e-4 ? spec.height / size.y : byLength;
-  root.scale.multiplyScalar(Math.min(byLength, byHeight));
-  seatOnGround(root);
-
-  root.updateMatrixWorld(true);
-  const fitted = new THREE.Box3().setFromObject(root);
-  const fittedSize = new THREE.Vector3();
-  fitted.getSize(fittedSize);
-  if (kind === 'locomotive') {
-    root.userData.smokeOffset = new THREE.Vector3(
-      fittedSize.x * 0.22,
-      fittedSize.y * 0.92,
-      0,
-    );
-  }
+  body.scale.multiplyScalar(Math.min(byLength, byHeight));
+  seatOnGround(body);
 }
 
 function addWagonLoad(root: THREE.Group): void {
@@ -134,9 +184,37 @@ function addWagonLoad(root: THREE.Group): void {
   );
   load.name = 'load';
   load.visible = false;
-  load.position.set(0, box.max.y + 0.22, 0);
+  load.position.set(0, size.y + 0.22, 0);
   load.castShadow = true;
   root.add(load);
+}
+
+function prepareTrain(scene: THREE.Object3D, kind: TrainKind): THREE.Group {
+  // `layoutCars` escreve position/rotation no grupo raiz. O encaixe (yaw, escala,
+  // assento no trilho) fica num filho para não ser apagado a cada frame.
+  const body = new THREE.Group();
+  body.name = `fit:${kind}`;
+  body.add(scene);
+  fitTrain(body, kind);
+
+  const root = new THREE.Group();
+  root.name = `model:${kind}`;
+  root.add(body);
+  flattenMaterials(root);
+  if (kind === 'wagon') addWagonLoad(root);
+
+  root.updateMatrixWorld(true);
+  const fitted = new THREE.Box3().setFromObject(root);
+  const fittedSize = new THREE.Vector3();
+  fitted.getSize(fittedSize);
+  if (kind === 'locomotive') {
+    root.userData.smokeOffset = new THREE.Vector3(
+      fittedSize.x * 0.22,
+      fittedSize.y * 0.92,
+      0,
+    );
+  }
+  return root;
 }
 
 function prepareBuilding(scene: THREE.Object3D, kind: BuildingKind): THREE.Group {
@@ -152,16 +230,6 @@ function prepareBuilding(scene: THREE.Object3D, kind: BuildingKind): THREE.Group
     if (obj.name === 'blades' || obj.name === 'spin') obj.userData.spin = true;
   });
 
-  return root;
-}
-
-function prepareTrain(scene: THREE.Object3D, kind: TrainKind): THREE.Group {
-  const root = new THREE.Group();
-  root.name = `model:${kind}`;
-  root.add(scene);
-  fitTrain(root, kind);
-  flattenMaterials(root);
-  if (kind === 'wagon') addWagonLoad(root);
   return root;
 }
 

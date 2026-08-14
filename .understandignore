@@ -1,0 +1,14 @@
+# Keep product analysis focused on the four games and their landing page.
+AIMemory/
+mcps/
+terminals/
+.agents/
+.claude/
+**/artifacts/
+**/.shots/
+game_video.mp4
+shotgun.mp4
+**/node_modules/
+**/dist/
+site/
+islebuilder/assets/generated/raw/

@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import * as THREE from 'three';
 import {
   normalizeModelToHeight,
+  toGameMaterial,
   cloneBuildingModel,
   cloneTrainModel,
   hasBuildingModel,
@@ -71,6 +72,40 @@ describe('modelLoader', () => {
 
     const built = createBuilding('house');
     expect(built.getObjectByName('house-glb')).toBeTruthy();
+  });
+
+  it('toGameMaterial converts metallic PBR into Lambert so the mesh stays lit', () => {
+    const pbr = new THREE.MeshStandardMaterial({
+      color: '#2f66c4',
+      metalness: 1,
+      roughness: 1,
+    });
+    const converted = toGameMaterial(pbr);
+    expect(converted).toBeInstanceOf(THREE.MeshLambertMaterial);
+    expect((converted as THREE.MeshLambertMaterial).color.getHexString()).toBe('2f66c4');
+    expect(converted.side).toBe(THREE.DoubleSide);
+  });
+
+  it('cloneTrainModel keeps the seated child so layout pose cannot bury the mesh', () => {
+    const body = new THREE.Group();
+    body.name = 'fit:locomotive';
+    body.position.y = 1.4;
+    const marker = new THREE.Mesh(new THREE.BoxGeometry(2, 2.8, 1.2));
+    marker.position.y = 1.4;
+    body.add(marker);
+
+    const template = new THREE.Group();
+    template.name = 'model:locomotive';
+    template.add(body);
+    template.userData.smokeOffset = new THREE.Vector3(1, 2.5, 0);
+    _setTrainModelForTests('locomotive', template);
+
+    const cloned = cloneTrainModel('locomotive');
+    expect(cloned).not.toBeNull();
+    cloned!.position.set(10, 3, -4);
+    cloned!.rotation.set(0, 0.5, 0);
+    const fit = cloned!.getObjectByName('fit:locomotive');
+    expect(fit?.position.y).toBeCloseTo(1.4, 5);
   });
 
   it('cloneTrainModel returns a material-cloned locomotive when cached', () => {

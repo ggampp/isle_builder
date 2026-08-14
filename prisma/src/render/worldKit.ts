@@ -58,7 +58,7 @@ export class WorldKit {
     ];
     for (const [x, z] of spots) {
       const col = this.models.clone('column');
-      col.position.set(x, -0.22, z);
+      col.position.set(x, -0.18, z);
       this.group.add(col);
     }
 
@@ -68,24 +68,26 @@ export class WorldKit {
     ];
     for (const [x, z] of lampSpots) {
       const lamp = this.models.clone('lamp');
-      lamp.position.set(x, 2.15, z);
+      lamp.position.set(x, 2.05, z);
       this.group.add(lamp);
+      const glow = new THREE.PointLight('#ffb067', 1.6, 5.5, 2);
+      glow.position.set(x, 2.35, z);
+      this.group.add(glow);
     }
 
-    const plinthGeo = new THREE.CylinderGeometry(0.55, 0.62, 0.35, 10);
-    const gemGeo = new THREE.OctahedronGeometry(0.18, 0);
-    const gemMat = this.mats.glass;
+    const plinthGeo = new THREE.CylinderGeometry(0.42, 0.5, 0.28, 10);
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2 + 0.3;
       const r = Math.max(spanX, spanZ) * 0.78;
+      const px = Math.cos(a) * r;
+      const pz = Math.sin(a) * r;
       const p = new THREE.Mesh(plinthGeo, this.mats.obsidian);
-      p.position.set(Math.cos(a) * r, -0.04, Math.sin(a) * r);
+      p.position.set(px, -0.04, pz);
       p.castShadow = true;
       p.receiveShadow = true;
       this.group.add(p);
-      const gem = new THREE.Mesh(gemGeo, gemMat);
-      gem.position.set(Math.cos(a) * r, 0.38, Math.sin(a) * r);
-      gem.castShadow = true;
+      const gem = this.models.clone('crystal');
+      gem.position.set(px, 0.1, pz);
       this.group.add(gem);
     }
 

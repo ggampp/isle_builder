@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { heightAt } from '../world/heightfield.ts';
 import { sampleAt } from './network.ts';
 import type { TrackPath, Vec3 } from './network.ts';
-import { PIECE_SPECS, poseAlong } from './geometry.ts';
+import { PIECE_SPECS, poseAlong, sampleToward } from './geometry.ts';
 import type { PieceKind, Pose } from './geometry.ts';
 
 const TIE_SPACING = 1.4;
@@ -138,19 +138,29 @@ function buildTrestles(stations: { position: Vec3; tangent: Vec3 }[]): THREE.Gro
 }
 
 /** Prévia translúcida da próxima peça, colorida por validade. */
-export function buildPiecePreview(start: Pose, kind: PieceKind, valid: boolean): THREE.Group {
+export function buildPiecePreview(
+  start: Pose,
+  kind: PieceKind,
+  valid: boolean,
+  closeTo?: Pose,
+): THREE.Group {
   const group = new THREE.Group();
   const spec = PIECE_SPECS[kind];
-  const steps = Math.max(4, Math.round(spec.length / 1.4));
+  const closing = closeTo !== undefined;
+  const steps = closing
+    ? Math.max(4, Math.round(Math.hypot(start.x - closeTo.x, start.z - closeTo.z) / 1.4))
+    : Math.max(4, Math.round(spec.length / 1.4));
   const mat = new THREE.MeshBasicMaterial({
-    color: valid ? '#7bf06a' : '#f2564a',
+    color: closing ? '#7ee0ff' : valid ? '#7bf06a' : '#f2564a',
     transparent: true,
     opacity: 0.55,
     depthWrite: false,
   });
   const geo = new THREE.BoxGeometry(0.7, 0.2, 2.6);
-  for (let i = 0; i <= steps; i++) {
-    const pose = poseAlong(start, kind, i / steps);
+  const poses = closing
+    ? [{ ...start }, ...sampleToward(start, closeTo, steps)]
+    : Array.from({ length: steps + 1 }, (_, i) => poseAlong(start, kind, i / steps));
+  for (const pose of poses) {
     const tie = new THREE.Mesh(geo, mat);
     tie.position.set(pose.x, heightAt(pose.x, pose.z) + 0.5, pose.z);
     tie.rotation.y = -pose.heading;

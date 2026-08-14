@@ -290,8 +290,21 @@ export class Game {
     if (this.selection.type === 'track') {
       const check = this.network.canPlace(this.selection.kind, this.obstacleCheck);
       const affordable = this.economy.canAfford(PIECE_SPECS[this.selection.kind].cost);
+      const closing = check.ok && check.closesLoop === true;
       const valid = check.ok && affordable;
-      this.ghostGroup.add(buildPiecePreview(this.network.railhead, this.selection.kind, valid));
+      const origin = this.network.activeLine.origin;
+      this.ghostGroup.add(buildPiecePreview(
+        this.network.railhead,
+        this.selection.kind,
+        valid,
+        closing ? origin : undefined,
+      ));
+      if (closing) {
+        const ring = createRailheadMarker();
+        (ring.material as THREE.MeshBasicMaterial).color.set('#7ee0ff');
+        ring.position.set(origin.x, heightAt(origin.x, origin.z) + 1.2, origin.z);
+        this.ghostGroup.add(ring);
+      }
       this.ghostSpot = { x: 0, z: 0, valid };
       return;
     }
@@ -509,6 +522,9 @@ export class Game {
     this.progress.piecesPlaced++;
     this.audio.click();
     this.rebuildTrack();
+    if (result.closesLoop) {
+      this.hud.toast('Circuito fechado — o trem agora dá a volta.');
+    }
     if (this.selection?.type === 'track') {
       this.camera.focusOn(this.network.railhead.x, this.network.railhead.z);
     }
@@ -567,6 +583,7 @@ export class Game {
         points: path.points.slice(from),
         distances: path.distances.slice(from).map((d) => d - path.distances[from]),
         totalLength: path.totalLength - path.distances[from],
+        closed: line.closed,
       };
       if (own.points.length > 1) this.trackGroup.add(buildTrackMesh(own));
 
@@ -764,7 +781,7 @@ export class Game {
     }
 
     for (const spinner of this.spinners) spinner.rotation.z += dt * 0.9;
-    this.railheadMarker.visible = this.network.count > 0;
+    this.railheadMarker.visible = this.network.count > 0 && !this.network.activeLine.closed;
     this.railheadMarker.scale.setScalar(1 + Math.sin(this.elapsed * 3) * 0.12);
 
     this.updateGhost();

@@ -9,8 +9,8 @@ export class LightingRig {
 
   constructor() {
     this.group.name = 'lights';
-    this.hemi = new THREE.HemisphereLight('#8aa4d6', '#1a1420', 0.42);
-    this.key = new THREE.DirectionalLight('#fff1d6', 1.55);
+    this.hemi = new THREE.HemisphereLight('#8aa4d6', '#1a1420', 0.38);
+    this.key = new THREE.DirectionalLight('#fff1d6', 1.35);
     this.key.position.set(6.5, 11, 5.5);
     this.key.castShadow = true;
     this.key.shadow.mapSize.set(512, 512);

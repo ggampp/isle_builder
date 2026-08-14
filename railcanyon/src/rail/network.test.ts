@@ -171,4 +171,34 @@ describe('rede ferroviária', () => {
     expect(near.distance).toBeLessThan(1);
     expect(near.s).toBeLessThan(2);
   });
+
+  it('não fecha circuito nas primeiras peças perto da origem', () => {
+    const net = freshNetwork();
+    expect(net.place('straight').closesLoop).toBeFalsy();
+    expect(net.place('straight').closesLoop).toBeFalsy();
+    expect(net.place('straight').closesLoop).toBeFalsy();
+    expect(net.activeLine.closed).toBe(false);
+  });
+
+  it('fecha o circuito quando a ponta chega perto do trilho inicial', () => {
+    const net = freshNetwork();
+    for (let i = 0; i < 10; i++) {
+      const check = net.place('sharpR');
+      expect(check.ok).toBe(true);
+      expect(net.activeLine.closed).toBe(false);
+    }
+    const closing = net.place('sharpR');
+    expect(closing.ok).toBe(true);
+    expect(closing.closesLoop).toBe(true);
+    expect(net.activeLine.closed).toBe(true);
+
+    const path = net.path(0);
+    expect(path.closed).toBe(true);
+    const last = path.points[path.points.length - 1];
+    expect(Math.hypot(last.x - ORIGIN.x, last.z - ORIGIN.z)).toBeLessThan(1);
+
+    expect(net.place('straight').ok).toBe(false);
+    expect(net.undo().kind).toBe('sharpR');
+    expect(net.activeLine.closed).toBe(false);
+  });
 });

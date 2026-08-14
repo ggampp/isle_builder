@@ -58,12 +58,7 @@ export class Board3D {
     } catch {
       // procedural slate color remains
     }
-    await Promise.race([
-      this.models.preload(),
-      new Promise<void>((resolve) => {
-        window.setTimeout(resolve, 10000);
-      }),
-    ]);
+    await this.models.preload();
   }
 
   private bindInput(canvas: HTMLCanvasElement): void {
@@ -204,11 +199,8 @@ export class Board3D {
         if (!mat || !('emissive' in mat)) continue;
         const std = mat as THREE.MeshStandardMaterial;
         const isGlass = std.transparent || ('transmission' in std && (std as THREE.MeshPhysicalMaterial).transmission > 0);
-        if (!isGlass && std.metalness > 0.4 && std.roughness < 0.45) continue;
-        if (isGlass || std.roughness > 0.5 || std.emissiveIntensity > 0.01) {
-          std.emissive = color;
-          std.emissiveIntensity = isGlass ? 1.1 : 0.45;
-        }
+        std.emissive.copy(color);
+        std.emissiveIntensity = isGlass ? 1.15 : 0.8;
       }
     });
   }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 export interface SceneDiagnostics {
   calls: number;
@@ -44,11 +45,22 @@ export class GameScene {
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color('#070b14');
-    this.scene.fog = new THREE.FogExp2('#070b14', 0.028);
+    this.scene.fog = new THREE.FogExp2('#070b14', 0.018);
+    this.installEnvironment();
 
     this.camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
     this.resize();
     this.applyCamera();
+  }
+
+  private installEnvironment(): void {
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    const room = new RoomEnvironment();
+    const env = pmrem.fromScene(room, 0.04);
+    this.scene.environment = env.texture;
+    this.scene.environmentIntensity = 0.78;
+    room.dispose();
+    pmrem.dispose();
   }
 
   resize(): void {

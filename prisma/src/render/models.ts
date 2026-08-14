@@ -17,14 +17,14 @@ const URLS: Record<ModelKind, string> = {
 };
 
 const FIT: Record<ModelKind, { height?: number; footprint?: number }> = {
-  emitter: { height: 0.92, footprint: 0.7 },
-  target: { height: 0.88, footprint: 0.72 },
-  mirror: { height: 0.86, footprint: 0.82 },
+  emitter: { height: 1.0, footprint: 0.76 },
+  target: { height: 0.92, footprint: 0.76 },
+  mirror: { height: 0.9, footprint: 0.78 },
   wall: { height: 0.9, footprint: 0.88 },
   tile: { height: 0.07, footprint: 1.04 },
-  crystal: { height: 0.38, footprint: 0.32 },
-  lamp: { height: 1.6 },
-  column: { height: 4.4 },
+  crystal: { height: 0.48, footprint: 0.4 },
+  lamp: { height: 1.45, footprint: 0.58 },
+  column: { height: 1.2, footprint: 0.72 },
 };
 
 export interface ImportedStats {
@@ -51,7 +51,35 @@ function cloneMaterials(root: THREE.Object3D): void {
   });
 }
 
+function keepScaleOnly(root: THREE.Object3D): void {
+  const xAxis = new THREE.Vector3();
+  const yAxis = new THREE.Vector3();
+  const zAxis = new THREE.Vector3();
+  root.traverse((obj) => {
+    obj.updateMatrix();
+    const e = obj.matrix.elements;
+    xAxis.set(e[0], e[1], e[2]);
+    yAxis.set(e[4], e[5], e[6]);
+    zAxis.set(e[8], e[9], e[10]);
+    obj.position.set(0, 0, 0);
+    obj.quaternion.identity();
+    obj.rotation.set(0, 0, 0);
+    obj.scale.set(xAxis.length() || 1, yAxis.length() || 1, zAxis.length() || 1);
+    obj.matrixAutoUpdate = true;
+    obj.updateMatrix();
+  });
+}
+
+function recenterGround(root: THREE.Object3D): void {
+  root.updateMatrixWorld(true);
+  const fitted = new THREE.Box3().setFromObject(root);
+  root.position.x -= (fitted.min.x + fitted.max.x) / 2;
+  root.position.z -= (fitted.min.z + fitted.max.z) / 2;
+  root.position.y -= fitted.min.y;
+}
+
 function fitModel(root: THREE.Object3D, kind: ModelKind): void {
+  keepScaleOnly(root);
   root.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(root);
   const size = new THREE.Vector3();
@@ -67,11 +95,38 @@ function fitModel(root: THREE.Object3D, kind: ModelKind): void {
     scale = spec.footprint ? Math.min(scale, byH) : byH;
   }
   root.scale.multiplyScalar(scale);
+  recenterGround(root);
+  if (kind === 'mirror') slimMirror(root);
+}
+
+function slimMirror(root: THREE.Object3D): void {
   root.updateMatrixWorld(true);
-  const fitted = new THREE.Box3().setFromObject(root);
-  root.position.x -= (fitted.min.x + fitted.max.x) / 2;
-  root.position.z -= (fitted.min.z + fitted.max.z) / 2;
-  root.position.y -= fitted.min.y;
+  const size = new THREE.Vector3();
+  new THREE.Box3().setFromObject(root).getSize(size);
+  const axis: 'x' | 'z' = size.x <= size.z ? 'x' : 'z';
+  const current = axis === 'x' ? size.x : size.z;
+  const target = 0.1;
+  if (current <= target * 1.35) return;
+  root.scale[axis] *= target / current;
+  recenterGround(root);
+}
+
+function polishImportedMaterials(root: THREE.Object3D, kind: ModelKind): void {
+  root.traverse((obj) => {
+    if (!(obj instanceof THREE.Mesh)) return;
+    const list = Array.isArray(obj.material) ? obj.material : [obj.material];
+    for (const mat of list) {
+      if (!(mat instanceof THREE.MeshStandardMaterial)) continue;
+      mat.envMapIntensity = kind === 'mirror' ? 1.7 : 1.15;
+      if (kind === 'mirror') {
+        mat.metalness = Math.max(mat.metalness, 0.72);
+        mat.roughness = Math.min(mat.roughness, 0.2);
+      }
+      if (kind === 'emitter' || kind === 'target' || kind === 'lamp') {
+        mat.emissiveIntensity = Math.max(mat.emissiveIntensity, 0.2);
+      }
+    }
+  });
 }
 
 function countTriangles(root: THREE.Object3D): { triangles: number; meshes: number; materials: number } {
@@ -228,7 +283,7 @@ export class ModelCatalog {
   async preload(): Promise<void> {
     const loader = new GLTFLoader();
     await Promise.all((Object.keys(URLS) as ModelKind[]).map(async (kind) => {
-      if (kind === 'tile' || kind === 'crystal') {
+      if (kind === 'tile') {
         this.cache.set(kind, FALLBACKS[kind](this.mats));
         return;
       }
@@ -242,6 +297,7 @@ export class ModelCatalog {
         root.add(gltf.scene);
         flattenAndShadow(root);
         fitModel(root, kind);
+        polishImportedMaterials(root, kind);
         this.cache.set(kind, root);
         const counts = countTriangles(root);
         this.stats.push({ kind, ...counts, bytes: res.headers.get('content-length') ? Number(res.headers.get('content-length')) : 0 });

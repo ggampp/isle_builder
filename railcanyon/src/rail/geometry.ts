@@ -78,6 +78,22 @@ export function samplePiece(start: Pose, kind: PieceKind, steps: number): Pose[]
   return out;
 }
 
+/** Interpola uma peça-conectora da ponta atual até um alvo (fecha o circuito). */
+export function sampleToward(start: Pose, end: Pose, steps: number): Pose[] {
+  const count = Math.max(2, steps);
+  const turn = normalizeAngle(end.heading - start.heading);
+  const out: Pose[] = [];
+  for (let i = 1; i <= count; i++) {
+    const t = i / count;
+    out.push({
+      x: start.x + (end.x - start.x) * t,
+      z: start.z + (end.z - start.z) * t,
+      heading: start.heading + turn * t,
+    });
+  }
+  return out;
+}
+
 export function normalizeAngle(a: number): number {
   let r = a;
   while (r > Math.PI) r -= Math.PI * 2;

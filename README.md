@@ -13,6 +13,11 @@ glint/         Glint — action RPG num vale HD-2D, magia, slimes e level-up
 AIMemory/      memória compartilhada entre sessões de agentes
 ```
 
+Os diretÃ³rios de suporte `AIMemory/`, `mcps/`, `terminals/`, `.agents/` e
+`.claude/` nÃ£o fazem parte dos bundles dos jogos. O arquivo
+`.understandignore` os isola de inventÃ¡rios e anÃ¡lises de produto sem apagar o
+histÃ³rico utilizado pelos agentes.
+
 ## Rodando
 
 Cada jogo tem suas próprias dependências e scripts:

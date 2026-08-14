@@ -22,7 +22,12 @@ import {
 } from '../sim/world.ts';
 import { bobCrystals, placeLandmarks } from '../render/landmarks.ts';
 import { createLighting, createRenderer, resizeRenderer } from '../render/scene.ts';
-import { SpriteKit, cloneSprite, type Facing } from '../render/sprites.ts';
+import {
+  createGolemModel,
+  createHeroModel,
+  createSlimeModel,
+  type CharacterView,
+} from '../render/characters.ts';
 import { buildTerrain } from '../render/terrain.ts';
 import { Vfx } from '../render/vfx.ts';
 import { createWater } from '../render/water.ts';
@@ -43,9 +48,8 @@ export class Game {
   private loop: GameLoop;
   private hero: Hero;
   private enemies: Enemy[];
-  private sprites: SpriteKit;
-  private heroViews: Record<Facing, THREE.Sprite>;
-  private enemyViews: THREE.Sprite[] = [];
+  private heroView: CharacterView;
+  private enemyViews: CharacterView[] = [];
   private vfx: Vfx;
   private water: { mesh: THREE.Mesh; uniforms: { uTime: { value: number } } };
   private sun: THREE.DirectionalLight;
@@ -53,8 +57,8 @@ export class Game {
   private sparkT = 0;
   private killed = 0;
   private golemDown = false;
-  private facing: Facing = 'n';
   private bob = 0;
+  private heroMoving = 0;
 
   constructor(root: HTMLElement) {
     this.hero = createHero(PLAYER_START.x, PLAYER_START.z);
@@ -81,23 +85,15 @@ export class Game {
     this.scene.add(this.water.mesh);
     placeLandmarks(this.scene);
     this.vfx = new Vfx(this.scene);
-    this.sprites = new SpriteKit();
-
-    this.heroViews = {
-      s: this.sprites.hero.s,
-      n: this.sprites.hero.n,
-      e: this.sprites.hero.e,
-      w: this.sprites.hero.w,
-    };
-    for (const spr of Object.values(this.heroViews)) this.scene.add(spr);
+    this.heroView = createHeroModel();
+    this.scene.add(this.heroView.root);
 
     for (const enemy of this.enemies) {
-      const src = enemy.kind === 'golem' ? this.sprites.golem
-        : enemy.id % 5 === 0 ? this.sprites.ghost
-        : this.sprites.slime;
-      const spr = cloneSprite(src);
-      this.scene.add(spr);
-      this.enemyViews.push(spr);
+      const view = enemy.kind === 'golem'
+        ? createGolemModel()
+        : createSlimeModel(enemy.id % 5 === 0);
+      this.scene.add(view.root);
+      this.enemyViews.push(view);
     }
 
     this.input = new Input(this.hud.canvas);
@@ -119,7 +115,6 @@ export class Game {
     this.enemies = createEnemies(enemySpawns());
     this.killed = 0;
     this.golemDown = false;
-    this.facing = 'n';
     this.hud.setDead(false);
     this.publish();
   }
@@ -134,8 +129,9 @@ export class Game {
 
     if (this.hero.alive) {
       const axis = this.input.axis();
+      this.heroMoving = 0;
       if (axis.x !== 0 || axis.z !== 0) {
-        this.facing = this.sprites.facingFrom(axis.x, axis.z);
+        this.heroMoving = 1;
         this.hero.facingX = axis.x;
         this.hero.facingZ = axis.z;
         const next = moveOnTerrain(
@@ -229,23 +225,22 @@ export class Game {
   private syncViews(time: number): void {
     const hy = surfaceY(this.hero.x, this.hero.z);
     const bob = this.hero.alive ? Math.abs(Math.sin(this.bob)) * 0.04 : 0;
-    for (const dir of Object.keys(this.heroViews) as Facing[]) {
-      const spr = this.heroViews[dir];
-      spr.visible = dir === this.facing;
-      spr.position.set(this.hero.x, hy + bob, this.hero.z);
-      const mat = spr.material;
-      mat.opacity = this.hero.hurtCooldown > 0 && Math.sin(time * 28) > 0 ? 0.35 : 1;
-    }
+    this.heroView.root.visible = this.hero.alive;
+    this.heroView.root.position.set(this.hero.x, hy + bob, this.hero.z);
+    this.heroView.face(this.hero.facingX, this.hero.facingZ);
+    this.heroView.animate(time, this.heroMoving);
+    this.heroView.flash(this.hero.hurtCooldown > 0 && Math.sin(time * 28) > 0);
     for (let i = 0; i < this.enemies.length; i++) {
       const e = this.enemies[i];
-      const spr = this.enemyViews[i];
-      spr.visible = e.alive;
+      const view = this.enemyViews[i];
+      view.root.visible = e.alive;
       if (!e.alive) continue;
       const y = surfaceY(e.x, e.z);
       const bounce = e.kind === 'golem' ? 0 : Math.sin(time * 4 + e.id) * 0.08;
-      spr.position.set(e.x, y + bounce, e.z);
-      const mat = spr.material;
-      mat.color.set(e.hurtT > 0 ? 0xffc8a0 : 0xffffff);
+      view.root.position.set(e.x, y + bounce, e.z);
+      view.face(e.vx, e.vz);
+      view.animate(time + e.id * 0.31, Math.hypot(e.vx, e.vz));
+      view.flash(e.hurtT > 0);
     }
   }
 

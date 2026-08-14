@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PIECE_KINDS, PIECE_SPECS, normalizeAngle, pieceEnd, poseAlong, samplePiece } from './geometry.ts';
+import { PIECE_KINDS, PIECE_SPECS, normalizeAngle, pieceEnd, poseAlong, samplePiece, sampleToward } from './geometry.ts';
 import type { Pose } from './geometry.ts';
 
 const START: Pose = { x: 10, z: -4, heading: 0.7 };
@@ -46,5 +46,15 @@ describe('geometria das peças', () => {
     const right = pieceEnd({ x: 0, z: 0, heading: 0 }, 'curveR');
     expect(left.x).toBeCloseTo(right.x, 10);
     expect(left.z).toBeCloseTo(-right.z, 10);
+  });
+
+  it('sampleToward chega no alvo interpolando posição e heading', () => {
+    const end: Pose = { x: 20, z: 6, heading: START.heading + 0.4 };
+    const poses = sampleToward(START, end, 8);
+    expect(poses).toHaveLength(8);
+    expect(poses[7].x).toBeCloseTo(end.x, 10);
+    expect(poses[7].z).toBeCloseTo(end.z, 10);
+    expect(poses[7].heading).toBeCloseTo(end.heading, 10);
+    expect(poses[3].x).toBeCloseTo((START.x + end.x) / 2, 6);
   });
 });

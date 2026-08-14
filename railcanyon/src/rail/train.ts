@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { cloneTrainModel } from '../render/modelLoader.ts';
-import { sampleAt } from './network.ts';
+import { sampleAt, wrapLength } from './network.ts';
 import type { TrackPath } from './network.ts';
 
 const CAR_SPACING = 6.6;
@@ -20,6 +20,43 @@ export type TrainEvent =
   | { type: 'arrive'; townId: string }
   | { type: 'endOfLine' }
   | { type: 'outOfFuel' };
+
+function crossedOnLoop(
+  before: number,
+  after: number,
+  stopS: number,
+  length: number,
+  direction: number,
+): boolean {
+  if (length <= 0) return false;
+  const b = wrapLength(before, length);
+  const a = wrapLength(after, length);
+  const s = wrapLength(stopS, length);
+  if (direction > 0) {
+    if (a >= b) return b < s && a >= s;
+    return b < s || a >= s;
+  }
+  if (a <= b) return b > s && a <= s;
+  return b > s || a <= s;
+}
+
+const CAR_FORWARD = new THREE.Vector3(1, 0, 0);
+const _tangent = new THREE.Vector3();
+const _align = new THREE.Quaternion();
+
+/** Mesma orientação das dormentes: +X local segue a tangente do trilho. */
+export function alignCarToTangent(
+  car: THREE.Object3D,
+  tangent: { x: number; y: number; z: number },
+  reverse: boolean,
+): void {
+  _tangent.set(tangent.x, tangent.y, tangent.z);
+  if (_tangent.lengthSq() < 1e-8) _tangent.set(1, 0, 0);
+  else _tangent.normalize();
+  _align.setFromUnitVectors(CAR_FORWARD, _tangent);
+  car.quaternion.copy(_align);
+  if (reverse) car.rotateY(Math.PI);
+}
 
 function lambert(color: string): THREE.MeshLambertMaterial {
   return new THREE.MeshLambertMaterial({ color, flatShading: true });
@@ -186,6 +223,7 @@ export class Train {
       return this.lastTownId ? 'Parado na estação' : 'Fim da linha — construa mais trilhos';
     }
     if (this.logs <= 0) return 'Sem lenha — seguindo devagar';
+    if (this.path.closed) return 'Dando a volta no circuito';
     return 'Circulando pelo desfiladeiro';
   }
 
@@ -198,6 +236,10 @@ export class Train {
     this.path = path;
     this.stops = stops.slice().sort((a, b) => a.s - b.s);
     this.s = Math.min(this.s, path.totalLength);
+    if (path.closed) {
+      this.s = wrapLength(this.s, path.totalLength);
+      this.direction = 1;
+    }
   }
 
   /** Reposiciona o trem no início da linha (usado ao carregar um jogo salvo). */
@@ -235,12 +277,17 @@ export class Train {
       }
       this.condition = Math.max(0, this.condition - travelled * WEAR_PER_METER * this.wearFactor);
 
+      const length = this.path.totalLength;
+      const loop = this.path.closed;
+
       for (const stop of this.stops) {
-        const crossed = this.direction > 0
-          ? before < stop.s && this.s >= stop.s
-          : before > stop.s && this.s <= stop.s;
+        const crossed = loop
+          ? crossedOnLoop(before, this.s, stop.s, length, this.direction)
+          : this.direction > 0
+            ? before < stop.s && this.s >= stop.s
+            : before > stop.s && this.s <= stop.s;
         if (crossed) {
-          this.s = stop.s;
+          this.s = loop ? wrapLength(stop.s, length) : stop.s;
           this.dwellTimer = DWELL_SECONDS;
           this.lastTownId = stop.townId;
           this.logs = this.logsMax;
@@ -249,8 +296,10 @@ export class Train {
         }
       }
 
-      if (this.s >= this.path.totalLength) {
-        this.s = this.path.totalLength;
+      if (loop) {
+        this.s = wrapLength(this.s, length);
+      } else if (this.s >= length) {
+        this.s = length;
         this.direction = -1;
         this.dwellTimer = DWELL_SECONDS;
         this.lastTownId = null;
@@ -288,15 +337,17 @@ export class Train {
 
   private layoutCars(): void {
     if (!this.path) return;
+    const length = this.path.totalLength;
     for (let i = 0; i < this.cars.length; i++) {
       const offset = i * CAR_SPACING * this.direction;
-      const s = Math.min(Math.max(this.s - offset, 0), this.path.totalLength);
+      const raw = this.s - offset;
+      const s = this.path.closed
+        ? wrapLength(raw, length)
+        : Math.min(Math.max(raw, 0), length);
       const { position, tangent } = sampleAt(this.path, s);
       const car = this.cars[i];
       car.position.set(position.x, position.y, position.z);
-      const yaw = Math.atan2(tangent.x, tangent.z) - Math.PI / 2;
-      car.rotation.set(0, this.direction > 0 ? yaw : yaw + Math.PI, 0);
-      car.rotation.z = -Math.asin(Math.max(-1, Math.min(1, tangent.y))) * this.direction;
+      alignCarToTangent(car, tangent, this.direction < 0);
     }
   }
 
@@ -311,7 +362,7 @@ export class Train {
       const offset = loco.userData.smokeOffset instanceof THREE.Vector3
         ? loco.userData.smokeOffset
         : new THREE.Vector3(1.6, 3.4, 0);
-      puff.position.copy(offset).applyEuler(loco.rotation).add(loco.position);
+      puff.position.copy(offset).applyQuaternion(loco.quaternion).add(loco.position);
       puff.scale.setScalar(0.6);
       puff.visible = true;
       this.smokeAge[slot] = 0;
