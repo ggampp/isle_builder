@@ -1,6 +1,6 @@
 # Sala de Jogos
 
-Cinco jogos de navegador feitos do zero em TypeScript, cada um numa aplicação
+Seis jogos de navegador feitos do zero em TypeScript, cada um numa aplicação
 Vite independente, mais uma página inicial para escolher entre eles.
 
 ```
@@ -10,6 +10,7 @@ railcanyon/    Canyon Rails — construtor de ferrovias num desfiladeiro (3D low
 prisma/        Prisma — puzzle diário de luz, espelhos e mistura de cores (3D)
 splinter/      Splinter — playground FPS de destruição voxel (Three.js + Rapier)
 glint/         Glint — action RPG num vale HD-2D, magia, slimes e level-up
+emberhold/     Emberhold — keep isométrico de mineração, construção e defesa
 AIMemory/      memória compartilhada entre sessões de agentes
 ```
 
@@ -28,6 +29,7 @@ cd railcanyon && npm install && npm run dev     # Canyon Rails
 cd prisma     && npm install && npm run dev     # Prisma
 cd splinter   && npm install && npm run dev     # Splinter
 cd glint      && npm install && npm run dev     # Glint
+cd emberhold  && npm install && npm run dev     # Emberhold
 ```
 
 Em todos: `npm run test` roda os testes e `npm run build` roda o gate de tipos
@@ -50,6 +52,7 @@ na `main`:
 | `/prisma/` | Prisma |
 | `/splinter/` | Splinter |
 | `/glint/` | Glint |
+| `/emberhold/` | Emberhold |
 
 Para montar o mesmo site localmente:
 
@@ -59,13 +62,15 @@ Para montar o mesmo site localmente:
 (cd prisma     && npx vite build --base=/prisma/)
 (cd splinter   && npx vite build --base=/splinter/)
 (cd glint      && npx vite build --base=/glint/)
-mkdir -p site/isle-builder site/canyon-rails site/prisma site/splinter site/glint
+(cd emberhold  && npx vite build --base=/emberhold/)
+mkdir -p site/isle-builder site/canyon-rails site/prisma site/splinter site/glint site/emberhold
 cp -r landing/. site/
 cp -r islebuilder/dist/. site/isle-builder/
 cp -r railcanyon/dist/. site/canyon-rails/
 cp -r prisma/dist/. site/prisma/
 cp -r splinter/dist/. site/splinter/
 cp -r glint/dist/. site/glint/
+cp -r emberhold/dist/. site/emberhold/
 npx serve site
 ```
 
@@ -80,4 +85,5 @@ O deploy só funciona depois de habilitar Pages em
 - `prisma/GAME_PLAN.md` — regras, gerador e arquitetura do Prisma
 - `splinter/GAME_PLAN.md` — regras, física e armas do Splinter
 - `glint/GAME_PLAN.md` — regras de magia, XP e o vale do Glint
+- `emberhold/GAME_PLAN.md` — regras de mineração, reparo, patrulha e ondas
 - `AIMemory/handoffs/` — histórico de sessões

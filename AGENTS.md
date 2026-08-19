@@ -4,7 +4,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## Layout do repositório (mudou em 2026-08-11)
 
-Este repositório abriga **cinco jogos** e uma página de seleção. A raiz não é mais
+Este repositório abriga **seis jogos** e uma página de seleção. A raiz não é mais
 uma app: cada jogo tem `package.json`, `node_modules` e testes próprios, então
 **sempre rode `npm ...` de dentro do diretório do jogo**.
 
@@ -15,6 +15,7 @@ railcanyon/    Canyon Rails  — builder de ferrovias 3D low-poly
 prisma/        Prisma        — puzzle diário de luz e espelhos (Three.js 3D)
 splinter/      Splinter      — playground FPS de destruição voxel (Three.js + Rapier)
 glint/         Glint         — action RPG num vale HD-2D (magia, slimes, level-up)
+emberhold/     Emberhold     — keep isométrico de mineração, construção e defesa
 ```
 
 > **Canyon Rails** (`railcanyon/`) é a recriação original do jogo do vídeo
@@ -26,8 +27,14 @@ glint/         Glint         — action RPG num vale HD-2D (magia, slimes, level
 > https://x.com/Sthilhearts/status/2087471340911751547: magia em círculo cujo
 > dano cresce com o nível, slimes, cristais de descanso. Ver `glint/GAME_PLAN.md`.
 >
+> **Emberhold** (`emberhold/`) é a recriação original do sandbox de mineração e
+> defesa do post https://x.com/Fortryv/status/2089053430379667464: picareta,
+> paredes, torres, trabalhadores que reparam abaixo de 50% HP, patrulha que
+> defende a base sob ataque. Ver `emberhold/GAME_PLAN.md`.
+>
 > `.github/workflows/deploy.yml` publica no GitHub Pages: `/` (seleção),
-> `/isle-builder/`, `/canyon-rails/`, `/prisma/`, `/splinter/` e `/glint/`.
+> `/isle-builder/`, `/canyon-rails/`, `/prisma/`, `/splinter/`, `/glint/` e
+> `/emberhold/`.
 > Use `import.meta.env.BASE_URL` para caminhos de asset (não absolutos).
 
 ## Current State (Isle Builder)
