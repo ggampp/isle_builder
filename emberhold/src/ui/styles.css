@@ -1,0 +1,350 @@
+/* Emberhold — HUD de keep em cobre e pedra. */
+
+:root {
+  --ink: #1a1410;
+  --parchment: #f4e6c8;
+  --copper: #c45c28;
+  --teal: #2a7a62;
+  --gold: #e0b04a;
+  --stone: #3a3632;
+  --font: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #app {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #1a1410;
+  color: var(--parchment);
+  font-family: var(--font);
+}
+
+#app { position: relative; }
+
+#view {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 42%, transparent 50%, rgba(12, 8, 6, 0.45) 100%),
+    linear-gradient(180deg, rgba(20, 12, 8, 0.28), transparent 18%, transparent 72%, rgba(12, 8, 6, 0.4));
+}
+
+.topbar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 7px 14px;
+  background: linear-gradient(180deg, rgba(42, 36, 30, 0.92), rgba(22, 18, 14, 0.92));
+  border: 2px solid #2a241e;
+  border-radius: 999px;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.35);
+  pointer-events: none;
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: 13px;
+}
+.topbar .res { display: inline-flex; gap: 6px; align-items: center; padding: 0 8px; }
+.topbar .res b { color: var(--gold); }
+.topbar .wave { color: #e08070; }
+
+.log {
+  position: absolute;
+  left: max(12px, env(safe-area-inset-left));
+  bottom: 128px;
+  width: min(280px, 42vw);
+  padding: 8px 10px;
+  background: rgba(12, 10, 8, 0.55);
+  border: 1px solid rgba(224, 176, 74, 0.2);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  pointer-events: none;
+  text-shadow: 0 1px 2px #000;
+}
+.log div { opacity: 0.88; }
+
+.dock {
+  position: absolute;
+  left: 50%;
+  bottom: max(10px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: 88px auto 88px;
+  gap: 8px;
+  align-items: end;
+  pointer-events: none;
+}
+
+.globe {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 4px solid #2a241e;
+  box-shadow: inset 0 -10px 16px rgba(0,0,0,0.35), 0 6px 0 #1a1410;
+  position: relative;
+  overflow: hidden;
+  background: #1a1410;
+}
+.globe i {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 100%;
+}
+.globe.hp i { background: radial-gradient(circle at 40% 30%, #ff8a6a, #c43020 55%, #6a1010); }
+.globe.mp i { background: radial-gradient(circle at 40% 30%, #8fd0ff, #2a6ab0 55%, #143060); }
+.globe span {
+  position: absolute;
+  inset: auto 0 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 800;
+  text-shadow: 0 1px 2px #000;
+}
+
+.hotbar {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+.skills {
+  display: flex;
+  gap: 5px;
+}
+.skills button, .build-dock button {
+  width: 42px;
+  height: 42px;
+  border: 2px solid #3a3228;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #3a342c, #221c18);
+  color: var(--parchment);
+  font-size: 18px;
+  cursor: pointer;
+  box-shadow: 0 3px 0 #0e0c0a;
+}
+.skills button.active, .build-dock button.active {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px rgba(224,176,74,0.4), 0 3px 0 #0e0c0a;
+}
+.skills button:disabled { opacity: 0.4; }
+.xp {
+  width: min(340px, 70vw);
+  height: 10px;
+  background: #1a1410;
+  border: 1px solid rgba(200,154,232,0.4);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.xp i { display: block; height: 100%; background: linear-gradient(90deg, #6a3ca0, #c89ae8); width: 0; }
+.xp-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.build-dock {
+  pointer-events: auto;
+  position: absolute;
+  left: 50%;
+  bottom: 122px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: rgba(18,14,12,0.72);
+  border: 2px solid #2a241e;
+  border-radius: 12px;
+}
+
+.pet-card {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  top: 56px;
+  width: 168px;
+  height: 210px;
+  perspective: 700px;
+  pointer-events: auto;
+}
+.pet-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.55s ease;
+}
+.pet-card.flipped .pet-inner { transform: rotateY(180deg); }
+.pet-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border: 3px solid #2a241e;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #3a2a20, #1e1612);
+  padding: 10px;
+  box-shadow: 6px 8px 0 rgba(0,0,0,0.35);
+}
+.pet-face.back { transform: rotateY(180deg); }
+.pet-face h3 { margin: 0 0 6px; font-size: 14px; color: var(--gold); }
+.pet-face p { margin: 0 0 8px; font-size: 12px; line-height: 1.4; opacity: 0.9; }
+.pet-art {
+  height: 72px;
+  display: grid;
+  place-items: center;
+  image-rendering: pixelated;
+}
+.pet-art canvas { width: 72px; height: 56px; }
+.flip-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  background: #1a1410;
+  color: var(--gold);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.tools {
+  position: absolute;
+  top: 10px;
+  right: max(12px, env(safe-area-inset-right));
+  display: flex;
+  gap: 6px;
+}
+.tools button, .cast {
+  pointer-events: auto;
+  border: 2px solid #2a241e;
+  background: #2a241e;
+  color: var(--parchment);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.hint {
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  text-shadow: 0 1px 3px #000;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.banner {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  transform: translateX(-50%);
+  font-size: clamp(1.6rem, 5vw, 2.6rem);
+  font-weight: 900;
+  color: #b8e4ff;
+  text-shadow: 0 3px 0 #2a5080, 0 8px 18px rgba(0,0,0,0.4);
+  pointer-events: none;
+}
+.banner.pop { animation: pop 0.7s ease; }
+@keyframes pop {
+  from { transform: translateX(-50%) scale(0.6); opacity: 0; }
+  60% { transform: translateX(-50%) scale(1.08); opacity: 1; }
+  to { transform: translateX(-50%) scale(1); }
+}
+
+.overlay, .help {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8,6,4,0.55);
+}
+.overlay p {
+  margin: 0;
+  padding: 1.2rem 1.6rem;
+  background: #f4e6c8;
+  color: #1a1410;
+  border: 4px solid #1a1410;
+  border-radius: 16px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  box-shadow: 8px 8px 0 #1a1410;
+}
+.overlay[hidden], .help[hidden], .banner[hidden] { display: none !important; }
+.card {
+  width: min(420px, 92vw);
+  background: #f4e6c8;
+  color: #1a1410;
+  border: 4px solid #1a1410;
+  border-radius: 16px;
+  padding: 1.2rem 1.3rem;
+  box-shadow: 10px 10px 0 #1a1410;
+}
+.card h2 { margin: 0 0 0.6rem; }
+.card ul { margin: 0.6rem 0 1rem; padding-left: 1.1rem; }
+.card button {
+  border: 3px solid #1a1410;
+  background: var(--gold);
+  font-weight: 800;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.stick {
+  position: absolute;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: rgba(20,16,12,0.35);
+  border: 2px solid rgba(244,230,200,0.2);
+  pointer-events: auto;
+  display: none;
+}
+.stick .knob {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 38px; height: 38px;
+  margin: -19px 0 0 -19px;
+  border-radius: 50%;
+  background: rgba(224,176,74,0.85);
+}
+.cast {
+  position: absolute;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  font-size: 22px;
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .stick, .cast { display: block; }
+  .log { bottom: 160px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pet-inner, .banner.pop { transition: none; animation: none; }
+}

@@ -1,12 +1,13 @@
 name: Deploy games to GitHub Pages
 
-# Publica a sala de jogos e os cinco jogos do repositório:
+# Publica a sala de jogos e os seis jogos do repositório:
 #   /                → página de seleção (landing/)
 #   /isle-builder/   → Isle Builder (islebuilder/)
 #   /canyon-rails/   → Canyon Rails (railcanyon/)
 #   /prisma/         → Prisma (prisma/)
 #   /splinter/       → Splinter (splinter/)
 #   /glint/          → Glint (glint/)
+#   /emberhold/      → Emberhold (emberhold/)
 # Requer Pages habilitado em Settings → Pages → Source: GitHub Actions.
 
 on:
@@ -84,16 +85,27 @@ jobs:
           npm run test
           npx vite build --base="/${GITHUB_REPOSITORY#*/}/glint/"
 
-      - name: Montar o site (landing + os cinco jogos)
+      - name: Instalar dependências (Emberhold)
+        working-directory: emberhold
+        run: npm ci
+
+      - name: Testes e build (Emberhold)
+        working-directory: emberhold
+        run: |
+          npm run test
+          npx vite build --base="/${GITHUB_REPOSITORY#*/}/emberhold/"
+
+      - name: Montar o site (landing + os seis jogos)
         run: |
           rm -rf site
-          mkdir -p site/isle-builder site/canyon-rails site/prisma site/splinter site/glint
+          mkdir -p site/isle-builder site/canyon-rails site/prisma site/splinter site/glint site/emberhold
           cp -r landing/. site/
           cp -r islebuilder/dist/. site/isle-builder/
           cp -r railcanyon/dist/. site/canyon-rails/
           cp -r prisma/dist/. site/prisma/
           cp -r splinter/dist/. site/splinter/
           cp -r glint/dist/. site/glint/
+          cp -r emberhold/dist/. site/emberhold/
 
       - uses: actions/upload-pages-artifact@v3
         with:
